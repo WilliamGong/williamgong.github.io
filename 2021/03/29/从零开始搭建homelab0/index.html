@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta><title>从零开始搭建 Home Lab 0 硬件的选择与架构方案的确定 - WilliamGong的博客</title><link rel="manifest" href="/manifest.json"><meta name="application-name" content="WilliamGong的博客"><meta name="msapplication-TileImage" content="/images/favicon.ico"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="WilliamGong的博客"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta description="前言 搭建 Home Lab 的想法，起源于我有一次运行虚拟机的时候。 虽然我现在的主力笔记本性能不差，16G 内存 + 256G SSD，但众所周知 Chrome 是著名的性能消耗大户，导致我的内存有一半被它吞了；而且由于笔记本上安装的重型软件和游戏实在太多了，尤其是游戏，占了 60G+ 的空间，导致剩余硬盘空间捉襟见肘。因此每一次使用虚拟机时，都要扣扣索索的盘算着分配的内存和虚拟磁盘的容量。更"><meta property="og:type" content="article"><meta property="og:title" content="从零开始搭建 Home Lab 0 硬件的选择与架构方案的确定"><meta property="og:url" content="https://williamgong.github.io/2021/03/29/%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E6%90%AD%E5%BB%BAhomelab0/"><meta property="og:site_name" content="WilliamGong的博客"><meta property="og:description" content="前言 搭建 Home Lab 的想法，起源于我有一次运行虚拟机的时候。 虽然我现在的主力笔记本性能不差，16G 内存 + 256G SSD，但众所周知 Chrome 是著名的性能消耗大户，导致我的内存有一半被它吞了；而且由于笔记本上安装的重型软件和游戏实在太多了，尤其是游戏，占了 60G+ 的空间，导致剩余硬盘空间捉襟见肘。因此每一次使用虚拟机时，都要扣扣索索的盘算着分配的内存和虚拟磁盘的容量。更"><meta property="og:locale" content="zh_CN"><meta property="og:image" content="https://williamgong.github.io/img/og_image.png"><meta property="article:published_time" content="2021-03-28T22:06:20.000Z"><meta property="article:modified_time" content="2021-06-25T02:16:49.729Z"><meta property="article:author" content="William Gong"><meta property="article:tag" content="硬件"><meta property="article:tag" content="网络"><meta property="article:tag" content="Linux"><meta property="twitter:card" content="summary"><meta property="twitter:image" content="/img/og_image.png"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://williamgong.github.io/2021/03/29/%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E6%90%AD%E5%BB%BAhomelab0/"},"headline":"WilliamGong的博客","image":["https://williamgong.github.io/img/og_image.png"],"datePublished":"2021-03-28T22:06:20.000Z","dateModified":"2021-06-25T02:16:49.729Z","author":{"@type":"Person","name":"William Gong"},"description":"前言 搭建 Home Lab 的想法，起源于我有一次运行虚拟机的时候。 虽然我现在的主力笔记本性能不差，16G 内存 + 256G SSD，但众所周知 Chrome 是著名的性能消耗大户，导致我的内存有一半被它吞了；而且由于笔记本上安装的重型软件和游戏实在太多了，尤其是游戏，占了 60G+ 的空间，导致剩余硬盘空间捉襟见肘。因此每一次使用虚拟机时，都要扣扣索索的盘算着分配的内存和虚拟磁盘的容量。更"}</script><link rel="canonical" href="https://williamgong.github.io/2021/03/29/%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E6%90%AD%E5%BB%BAhomelab0/"><link rel="alternate" href="/atom.xml" title="WilliamGong的博客" type="application/atom+xml"><link rel="icon" href="/images/favicon.ico"><link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/5.13.1/css/all.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/atom-one-light.css"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;600&amp;family=Source+Code+Pro"><link rel="stylesheet" href="/css/default.css"><style>body>.footer,body>.navbar,body>.section{opacity:0}</style><!--!--><script>var _hmt = _hmt || [];
+        (function() {
+            var hm = document.createElement("script");
+            hm.src = "//hm.baidu.com/hm.js?2bbd01e65b22abbc1be85e9d4383034b";
+            var s = document.getElementsByTagName("script")[0];
+            s.parentNode.insertBefore(hm, s);
+        })();</script><meta name="msvalidate.01" content="30D1F37102A54580CBBD8B39C14D54A2"><script src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" defer></script><!--!--><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css"><!--!--><!--!--><!--!--><script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script><!--!--><!--!--><meta name="generator" content="Hexo 5.2.0"><style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"] > svg a {
+  fill: blue;
+  stroke: blue;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head><body class="is-2-column"><nav class="navbar navbar-main"><div class="container"><div class="navbar-brand justify-content-center"><a class="navbar-item navbar-logo" href="/">WilliamGong</a></div><div class="navbar-menu"><div class="navbar-start"><a class="navbar-item" href="/">Home</a><a class="navbar-item" href="/archives">Archives</a><a class="navbar-item" href="/categories">Categories</a><a class="navbar-item" href="/tags">Tags</a><a class="navbar-item" href="/about">About</a></div><div class="navbar-end"><a class="navbar-item" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/WilliamGong/hexo-blog"><i class="fab fa-github"></i></a><a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;"><i class="fas fa-list-ul"></i></a><a class="navbar-item search" title="搜索" href="javascript:;"><i class="fas fa-search"></i></a></div></div></div></nav><section class="section"><div class="container"><div class="columns"><div class="column order-2 column-main is-8-tablet is-8-desktop is-8-widescreen"><div class="card"><article class="card-content article" role="article"><div class="article-meta is-size-7 is-uppercase level is-mobile"><div class="level-left"><span class="level-item"><time dateTime="2021-03-28T22:06:20.000Z" title="2021-03-28T22:06:20.000Z">2021-03-29</time>发表</span><span class="level-item"><time dateTime="2021-06-25T02:16:49.729Z" title="2021-06-25T02:16:49.729Z">2021-06-25</time>更新</span><span class="level-item"><a class="link-muted" href="/categories/Home-Lab/">Home Lab</a></span><span class="level-item">11 分钟读完 (大约1601个字)</span><span class="level-item" id="busuanzi_container_page_pv"><span id="busuanzi_value_page_pv">0</span>次访问</span></div></div><h1 class="title is-3 is-size-4-mobile">从零开始搭建 Home Lab 0 硬件的选择与架构方案的确定</h1><div class="content"><h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>搭建 Home Lab 的想法，起源于我有一次运行虚拟机的时候。<br>虽然我现在的主力笔记本性能不差，16G 内存 + 256G SSD，但众所周知 Chrome 是著名的性能消耗大户，导致我的内存有一半被它吞了；而且由于笔记本上安装的重型软件和游戏实在太多了，尤其是游戏，占了 60G+ 的空间，导致剩余硬盘空间捉襟见肘。因此每一次使用虚拟机时，都要扣扣索索的盘算着分配的内存和虚拟磁盘的容量。更令人恼火的是，每次创建虚拟机，都要删掉一个游戏或者是占用了大量磁盘空间的软件，而且每次跑虚拟机只是测试一下而已，没过多久就要删，而删去虚拟机的时候再去下载这些程序是十分痛苦的事情。因此我便产生了专门买服务器跑虚拟机的想法。<br>而搭建 Home Lab 的另外一个原因，是因为折腾。<br>曾经我一直在一台 10 年前购入的 Lenovo 笔记本上跑 Gentoo，但由于<strong>各 种 各 样</strong>的原因，Gentoo 一直没安装成功，这称为了我心中的一根刺；而且我手头缺少一台 Linux 开发机，虽然 WSL 已经能满足大部分需求，但有些东西是 WSL 做不到的。而搭建一台 Home Lab，能做到All in One，开发机什么的将不再是问题。      </p>
+<blockquote>
+<p>虽然缺少 Linux 开发机是一个伪需求……</p>
+</blockquote>
+<h1 id="对于Home-Lab的需求"><a href="#对于Home-Lab的需求" class="headerlink" title="对于Home Lab的需求"></a>对于Home Lab的需求</h1><p>既然要选择买服务器搭建 Home Lab，那就一步到位吧。<br>那我对 Home Lab的需求是什么呢？</p>
+<ol>
+<li><strong>NAS</strong>。我喜欢屯资源，什么无损音乐，番剧电影，盗版游戏加起来快有几百 G 了，虽然手头有个 2T 的移动硬盘，但每一次连接和卸载移动硬盘十分麻烦；而且我经常挂机下载，一挂机就是几天，对于笔记本而言总会有稳定性问题，用专用的机器进行显然要好很多。</li>
+<li><strong>开发机</strong>。毕竟我要折腾 Gentoo，天天跑编译，CPU 性能还是挺重要的，至少成品 NAS 常用的 Atom，赛扬会有些吃力。</li>
+<li><strong>测试机</strong>。有时我需要一台 Windows 测试机试毒养蛊，有时又会开一台 Linux 虚拟机折腾。不过由于只是测试，性能需求会小很多。</li>
+</ol>
+<h1 id="硬件的选择"><a href="#硬件的选择" class="headerlink" title="硬件的选择"></a>硬件的选择</h1><p>本人学生党，对硬件的选择自然是越便宜越好，但在金钱与性能之间权衡是一件很痛苦的事情。死来想去，确认了如下方案。</p>
+<h2 id="服务器主机"><a href="#服务器主机" class="headerlink" title="服务器主机"></a>服务器主机</h2><p>看了几个月，最终确认了购入服务器的型号：HPE ProLiant MicroServer Gen10 Plus。<br>为什么要选择这台机器呢？</p>
+<ol>
+<li><strong>小</strong>。机身设计十分紧凑，应该是四盘位微型服务器的极限了，而且高度只有它的前代产品的一半左右。放在宿舍里也不占空间，也容易搬。</li>
+<li><strong>性能不差</strong>。高配的版本使用的 E3-2200 CPU 性能肯定不辍，但多达 71W 的 TDP 和价钱使我果断放弃，但低配的 G5420 性能也不差。</li>
+<li><strong>易于拆装和升级</strong>。不像一部分　NAS　将　CPU　焊在主板上，这台机器　CPU　可以拆卸，而且接口是　LGA1151，虽然不能换大部分至强 CPU，但可以装大部分桌面级 CPU 和一部分 E3，并且高性能服务器级 CPU 与我无缘。虽然我不会上桌面级的 U，但至少还有的选。内存标准最大容量 32G，而且实测最高可以到 64G（当然也与选择的 CPU 有关）。两个标准的 DDR4 内存插槽，支持双通道和 ECC。此外还配有一个标准的 PCI-E 3.0 插槽和一个专用于 ILO 的阉割版 PCI-E 插槽（等于除了插 ILO 网卡外没什么用）。不过这也是它的一个缺点。（但至少还有一个插槽不是吗？）</li>
+</ol>
+<p>我的机器是在闲鱼上买的二手未开封机器，相比与狗东上 6000+ 的价格，闲鱼上的价格只有三分之二，而且和全新的没区别。（除了容易被坑，毕竟虽然只有三分之二还是 将近 4000 RMB，被骗了就真的难受了。）</p>
+<h2 id="内存与硬盘"><a href="#内存与硬盘" class="headerlink" title="内存与硬盘"></a>内存与硬盘</h2><p>内存本来是准备一条 16G 的，但下单的时候没注意买成了两条，于是变成了 32G。型号的光威奕 PRO，国产颗粒。虽说支持国产是一个因素，但更重要的原因是便宜。<br>至于硬盘，由于要建 NAS，硬盘不敢买差的，于是选择了 2T 的希捷酷狼和一个金士顿的 128G SATA SSD 用作系统盘。</p>
+<h2 id="网络设备"><a href="#网络设备" class="headerlink" title="网络设备"></a>网络设备</h2><p>由于要开各种网络服务，一个路由器是很有必要的，但只需要有就行了。不过由于需要校园网拨号，于是买了一个二手小娱 C3 刷 Open WRT，不到 100 RMB。</p>
+<h1 id="系统架构的确定"><a href="#系统架构的确定" class="headerlink" title="系统架构的确定"></a>系统架构的确定</h1><p>曾经我打算在主机上直接装 Gentoo，其他的开虚拟机，但毕竟实验/开发环境天天挂，最后还是选择在主机上装 Hypervisor，各种服务跑虚拟机上的方案。这个 Hypervisor 将同时运行至少两台虚拟机，NAS 和开发机。有时还要同时运行测试机和跑各种 docker/LXC 的虚拟机。<br>Hypervisor 我最终选择了 Proxmox VE。这玩意如果不订阅每次登录都要弹警告很烦人，因此我曾一度打算装 kvm 和 qemu 自己糊，但实际用起来后我直呼真香。NAS 我选择了OpenMediaVault，开发机不用多说自然是 Gentoo。</p>
+</div><div class="article-licensing box"><div class="licensing-title"><p>从零开始搭建 Home Lab 0 硬件的选择与架构方案的确定</p><p><a href="https://williamgong.github.io/2021/03/29/%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E6%90%AD%E5%BB%BAhomelab0/">https://williamgong.github.io/2021/03/29/%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E6%90%AD%E5%BB%BAhomelab0/</a></p></div><div class="licensing-meta level is-mobile"><div class="level-left"><div class="level-item is-narrow"><div><h6>作者</h6><p>William Gong</p></div></div><div class="level-item is-narrow"><div><h6>发布于</h6><p>2021-03-29</p></div></div><div class="level-item is-narrow"><div><h6>更新于</h6><p>2021-06-25</p></div></div><div class="level-item is-narrow"><div><h6>许可协议</h6><p><a class="icon" rel="noopener" target="_blank" title="Creative Commons" href="https://creativecommons.org/"><i class="fab fa-creative-commons"></i></a><a class="icon" rel="noopener" target="_blank" title="Attribution" href="https://creativecommons.org/licenses/by/4.0/"><i class="fab fa-creative-commons-by"></i></a><a class="icon" rel="noopener" target="_blank" title="Noncommercial" href="https://creativecommons.org/licenses/by-nc/4.0/"><i class="fab fa-creative-commons-nc"></i></a></p></div></div></div></div></div><div class="article-tags is-size-7 mb-4"><span class="mr-2">#</span><a class="link-muted mr-2" rel="tag" href="/tags/%E7%A1%AC%E4%BB%B6/">硬件</a><a class="link-muted mr-2" rel="tag" href="/tags/%E7%BD%91%E7%BB%9C/">网络</a><a class="link-muted mr-2" rel="tag" href="/tags/Linux/">Linux</a></div><!--!--></article></div><!--!--><nav class="post-navigation mt-4 level is-mobile"><div class="level-start"><a class="article-nav-prev level level-item link-muted" href="/2021/04/01/%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E6%90%AD%E5%BB%BAhomelab1/"><i class="level-item fas fa-chevron-left"></i><span class="level-item">从零开始搭建 Home Lab 1 HPE Gen 10 Plus 安装与配置</span></a></div><div class="level-end"><a class="article-nav-next level level-item link-muted" href="/2020/10/22/O%E6%B3%A1%E6%9E%9C%E5%A5%B6app%E8%A7%A3%E6%9E%902_lua%E6%96%87%E4%BB%B6%E8%A7%A3%E5%AF%86%E4%B8%8E%E5%8F%8D%E7%BC%96%E8%AF%91/"><span class="level-item">“O泡果奶”app解析2 lua文件解密与反编译</span><i class="level-item fas fa-chevron-right"></i></a></div></nav><!--!--></div><div class="column column-left is-4-tablet is-4-desktop is-4-widescreen  order-1 is-sticky"><div class="card widget" data-type="profile"><div class="card-content"><nav class="level"><div class="level-item has-text-centered flex-shrink-1"><div><figure class="image is-128x128 mx-auto mb-2"><img class="avatar" src="/images/avatar.png" alt="William Gong"></figure><p class="title is-size-4 is-block" style="line-height:inherit;">William Gong</p><p class="is-size-6 is-block">一条咸鱼</p><p class="is-size-6 is-flex justify-content-center"><i class="fas fa-map-marker-alt mr-1"></i><span>Guangzhou China</span></p></div></div></nav><nav class="level is-mobile"><div class="level-item has-text-centered is-marginless"><div><p class="heading">文章</p><a href="/archives"><p class="title">11</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">分类</p><a href="/categories"><p class="title">4</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">标签</p><a href="/tags"><p class="title">9</p></a></div></div></nav><div class="level"><a class="level-item button is-primary is-rounded" href="https://github.com/WilliamGong" target="_blank" rel="noopener">关注我</a></div><div class="level is-mobile"><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Github" href="https://github.com/WilliamGong"><i class="fab fa-github"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Zhihu" href="https://www.zhihu.com/people/gong-tai-lin"><i class="fab fa-zhihu"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="RSS" href="/atom.xml"><i class="fas fa-rss"></i></a></div></div></div><div class="card widget" id="toc" data-type="toc"><div class="card-content"><div class="menu"><h3 class="menu-label">目录</h3><ul class="menu-list"><li><a class="level is-mobile" href="#前言"><span class="level-left"><span class="level-item">1</span><span class="level-item">前言</span></span></a></li><li><a class="level is-mobile" href="#对于Home-Lab的需求"><span class="level-left"><span class="level-item">2</span><span class="level-item">对于Home Lab的需求</span></span></a></li><li><a class="level is-mobile" href="#硬件的选择"><span class="level-left"><span class="level-item">3</span><span class="level-item">硬件的选择</span></span></a><ul class="menu-list"><li><a class="level is-mobile" href="#服务器主机"><span class="level-left"><span class="level-item">3.1</span><span class="level-item">服务器主机</span></span></a></li><li><a class="level is-mobile" href="#内存与硬盘"><span class="level-left"><span class="level-item">3.2</span><span class="level-item">内存与硬盘</span></span></a></li><li><a class="level is-mobile" href="#网络设备"><span class="level-left"><span class="level-item">3.3</span><span class="level-item">网络设备</span></span></a></li></ul></li><li><a class="level is-mobile" href="#系统架构的确定"><span class="level-left"><span class="level-item">4</span><span class="level-item">系统架构的确定</span></span></a></li></ul></div></div><style>.menu-list > li > a.is-active + .menu-list { display: block; }.menu-list > li > a + .menu-list { display: none; }</style><script src="/js/toc.js" defer></script></div><div class="card widget" data-type="categories"><div class="card-content"><div class="menu"><h3 class="menu-label">分类</h3><ul class="menu-list"><li><a class="level is-mobile" href="/categories/Android/"><span class="level-start"><span class="level-item">Android</span></span><span class="level-end"><span class="level-item tag">3</span></span></a></li><li><a class="level is-mobile" href="/categories/Home-Lab/"><span class="level-start"><span class="level-item">Home Lab</span></span><span class="level-end"><span class="level-item tag">4</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%8D%9A%E5%AE%A2%E6%90%AD%E5%BB%BA/"><span class="level-start"><span class="level-item">博客搭建</span></span><span class="level-end"><span class="level-item tag">3</span></span></a></li><li><a class="level is-mobile" href="/categories/%E6%9D%82%E8%B0%88/"><span class="level-start"><span class="level-item">杂谈</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li></ul></div></div></div><div class="card widget" data-type="archives"><div class="card-content"><div class="menu"><h3 class="menu-label">归档</h3><ul class="menu-list"><li><a class="level is-mobile" href="/archives/2021/06/"><span class="level-start"><span class="level-item">六月 2021</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2021/05/"><span class="level-start"><span class="level-item">五月 2021</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/archives/2021/04/"><span class="level-start"><span class="level-item">四月 2021</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2021/03/"><span class="level-start"><span class="level-item">三月 2021</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2020/10/"><span class="level-start"><span class="level-item">十月 2020</span></span><span class="level-end"><span class="level-item tag">6</span></span></a></li></ul></div></div></div><div class="card widget" data-type="tags"><div class="card-content"><div class="menu"><h3 class="menu-label">标签</h3><div class="field is-grouped is-grouped-multiline"><div class="control"><a class="tags has-addons" href="/tags/Android/"><span class="tag">Android</span><span class="tag">3</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Gentoo/"><span class="tag">Gentoo</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Linux/"><span class="tag">Linux</span><span class="tag">4</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Proxmox-VE/"><span class="tag">Proxmox VE</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%8D%9A%E5%AE%A2/"><span class="tag">博客</span><span class="tag">3</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%9D%82%E8%B0%88/"><span class="tag">杂谈</span><span class="tag">4</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E7%A1%AC%E4%BB%B6/"><span class="tag">硬件</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E7%BD%91%E7%BB%9C/"><span class="tag">网络</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E9%80%86%E5%90%91%E5%B7%A5%E7%A8%8B/"><span class="tag">逆向工程</span><span class="tag">3</span></a></div></div></div></div></div></div><!--!--></div></div></section><footer class="footer"><div class="container"><div class="level"><div class="level-start"><a class="footer-logo is-block mb-2" href="/">WilliamGong</a><p class="is-size-7"><span>&copy; 2021 William Gong</span>  Powered by <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a> &amp; <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank" rel="noopener">Icarus</a><br><span id="busuanzi_container_site_uv">共<span id="busuanzi_value_site_uv">0</span>个访客</span></p></div><div class="level-end"><div class="field has-addons"><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Creative Commons" href="https://creativecommons.org/"><i class="fab fa-creative-commons"></i></a></p><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/"><i class="fab fa-creative-commons-by"></i></a></p><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/WilliamGong/hexo-blog"><i class="fab fa-github"></i></a></p></div></div></div></div></footer><script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script><script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" async></script><script>moment.locale("zh-CN");</script><script>var IcarusThemeSettings = {
+            article: {
+                highlight: {
+                    clipboard: true,
+                    fold: 'unfolded'
+                }
+            }
+        };</script><script src="/js/column.js"></script><script src="/js/animation.js"></script><a id="back-to-top" title="回到顶端" href="javascript:;"><i class="fas fa-chevron-up"></i></a><script src="/js/back_to_top.js" defer></script><!--!--><!--!--><!--!--><!--!--><script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script><script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script><script>window.addEventListener("load", () => {
+            if (typeof $.fn.lightGallery === 'function') {
+                $('.article').lightGallery({ selector: '.gallery-item' });
+            }
+            if (typeof $.fn.justifiedGallery === 'function') {
+                if ($('.justified-gallery > p > .gallery-item').length) {
+                    $('.justified-gallery > p > .gallery-item').unwrap();
+                }
+                $('.justified-gallery').justifiedGallery();
+            }
+        });</script><!--!--><!--!--><script type="text/x-mathjax-config">MathJax.Hub.Config({
+            'HTML-CSS': {
+                matchFontHeight: false
+            },
+            SVG: {
+                matchFontHeight: false
+            },
+            CommonHTML: {
+                matchFontHeight: false
+            },
+            tex2jax: {
+                inlineMath: [
+                    ['$','$'],
+                    ['\\(','\\)']
+                ]
+            }
+        });</script><script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script><!--!--><!--!--><!--!--><script src="/js/main.js" defer></script><div class="searchbox"><div class="searchbox-container"><div class="searchbox-header"><div class="searchbox-input-container"><input class="searchbox-input" type="text" placeholder="想要查找什么..."></div><a class="searchbox-close" href="javascript:;">×</a></div><div class="searchbox-body"></div></div></div><script src="/js/insight.js" defer></script><script>document.addEventListener('DOMContentLoaded', function () {
+            loadInsight({"contentUrl":"/content.json"}, {"hint":"想要查找什么...","untitled":"(无标题)","posts":"文章","pages":"页面","categories":"分类","tags":"标签"});
+        });</script></body></html>
