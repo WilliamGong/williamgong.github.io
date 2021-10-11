@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta><title>从零开始搭建 Home Lab 3 安装 Gentoo 中的那些坑 - WilliamGong的博客</title><link rel="manifest" href="/manifest.json"><meta name="application-name" content="WilliamGong的博客"><meta name="msapplication-TileImage" content="/images/favicon.ico"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="WilliamGong的博客"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta description="当 Proxmox VE 已经搭建完成后，就可以准备开发机了。  创建虚拟机 其实 PVE 虚拟机创建向导很舒服，在一般情况下照着来就行。但对于 Gentoo，从这里开始就有坑了。 首先是 CPU，这个虽然不是坑，但这是我的一个小小的建议，将 CPU 类型设置为 host。毕竟由于 Gentoo 的特性，可以针对 CPU 进行优化，对于像好好玩 Gentoo 的人来说，个人认为这一点蛮重要的。而且"><meta property="og:type" content="article"><meta property="og:title" content="从零开始搭建 Home Lab 3 安装 Gentoo 中的那些坑"><meta property="og:url" content="https://williamgong.github.io/2021/05/12/%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E6%90%AD%E5%BB%BAhomelab3/"><meta property="og:site_name" content="WilliamGong的博客"><meta property="og:description" content="当 Proxmox VE 已经搭建完成后，就可以准备开发机了。  创建虚拟机 其实 PVE 虚拟机创建向导很舒服，在一般情况下照着来就行。但对于 Gentoo，从这里开始就有坑了。 首先是 CPU，这个虽然不是坑，但这是我的一个小小的建议，将 CPU 类型设置为 host。毕竟由于 Gentoo 的特性，可以针对 CPU 进行优化，对于像好好玩 Gentoo 的人来说，个人认为这一点蛮重要的。而且"><meta property="og:locale" content="zh_CN"><meta property="og:image" content="https://williamgong.github.io/img/og_image.png"><meta property="article:published_time" content="2021-05-12T22:57:20.000Z"><meta property="article:modified_time" content="2021-10-11T17:09:54.244Z"><meta property="article:author" content="William Gong"><meta property="article:tag" content="Linux"><meta property="article:tag" content="Gentoo"><meta property="twitter:card" content="summary"><meta property="twitter:image" content="/img/og_image.png"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://williamgong.github.io/2021/05/12/%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E6%90%AD%E5%BB%BAhomelab3/"},"headline":"WilliamGong的博客","image":["https://williamgong.github.io/img/og_image.png"],"datePublished":"2021-05-12T22:57:20.000Z","dateModified":"2021-10-11T17:09:54.244Z","author":{"@type":"Person","name":"William Gong"},"description":"当 Proxmox VE 已经搭建完成后，就可以准备开发机了。  创建虚拟机 其实 PVE 虚拟机创建向导很舒服，在一般情况下照着来就行。但对于 Gentoo，从这里开始就有坑了。 首先是 CPU，这个虽然不是坑，但这是我的一个小小的建议，将 CPU 类型设置为 host。毕竟由于 Gentoo 的特性，可以针对 CPU 进行优化，对于像好好玩 Gentoo 的人来说，个人认为这一点蛮重要的。而且"}</script><link rel="canonical" href="https://williamgong.github.io/2021/05/12/%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E6%90%AD%E5%BB%BAhomelab3/"><link rel="alternate" href="/atom.xml" title="WilliamGong的博客" type="application/atom+xml"><link rel="icon" href="/images/favicon.ico"><link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/5.13.1/css/all.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/atom-one-light.css"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;600&amp;family=Source+Code+Pro"><link rel="stylesheet" href="/css/default.css"><style>body>.footer,body>.navbar,body>.section{opacity:0}</style><!--!--><script>var _hmt = _hmt || [];
+        (function() {
+            var hm = document.createElement("script");
+            hm.src = "//hm.baidu.com/hm.js?2bbd01e65b22abbc1be85e9d4383034b";
+            var s = document.getElementsByTagName("script")[0];
+            s.parentNode.insertBefore(hm, s);
+        })();</script><meta name="msvalidate.01" content="30D1F37102A54580CBBD8B39C14D54A2"><script src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" defer></script><!--!--><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css"><!--!--><!--!--><!--!--><script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script><!--!--><!--!--><meta name="generator" content="Hexo 5.2.0"><style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"] > svg a {
+  fill: blue;
+  stroke: blue;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head><body class="is-2-column"><nav class="navbar navbar-main"><div class="container"><div class="navbar-brand justify-content-center"><a class="navbar-item navbar-logo" href="/">WilliamGong</a></div><div class="navbar-menu"><div class="navbar-start"><a class="navbar-item" href="/">Home</a><a class="navbar-item" href="/archives">Archives</a><a class="navbar-item" href="/categories">Categories</a><a class="navbar-item" href="/tags">Tags</a><a class="navbar-item" href="/about">About</a></div><div class="navbar-end"><a class="navbar-item" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/WilliamGong/hexo-blog"><i class="fab fa-github"></i></a><a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;"><i class="fas fa-list-ul"></i></a><a class="navbar-item search" title="搜索" href="javascript:;"><i class="fas fa-search"></i></a></div></div></div></nav><section class="section"><div class="container"><div class="columns"><div class="column order-2 column-main is-8-tablet is-8-desktop is-8-widescreen"><div class="card"><article class="card-content article" role="article"><div class="article-meta is-size-7 is-uppercase level is-mobile"><div class="level-left"><span class="level-item"><time dateTime="2021-05-12T22:57:20.000Z" title="2021-05-12T22:57:20.000Z">2021-05-13</time>发表</span><span class="level-item"><time dateTime="2021-10-11T17:09:54.244Z" title="2021-10-11T17:09:54.244Z">2021-10-12</time>更新</span><span class="level-item"><a class="link-muted" href="/categories/Home-Lab/">Home Lab</a></span><span class="level-item">11 分钟读完 (大约1687个字)</span><span class="level-item" id="busuanzi_container_page_pv"><span id="busuanzi_value_page_pv">0</span>次访问</span></div></div><h1 class="title is-3 is-size-4-mobile">从零开始搭建 Home Lab 3 安装 Gentoo 中的那些坑</h1><div class="content"><p>当 Proxmox VE 已经搭建完成后，就可以准备开发机了。</p>
+<h1 id="创建虚拟机"><a href="#创建虚拟机" class="headerlink" title="创建虚拟机"></a>创建虚拟机</h1><p>其实 PVE 虚拟机创建向导很舒服，在一般情况下照着来就行。但对于 Gentoo，从这里开始就有坑了。<br>首先是 CPU，这个虽然不是坑，但这是我的一个小小的建议，将 CPU 类型设置为 host。毕竟由于 Gentoo 的特性，可以针对 CPU 进行优化，对于像好好玩 Gentoo 的人来说，个人认为这一点蛮重要的。而且由于要编译嘛，CPU 性能能榨干一点是一点。<br>此外就是各驱动了。<strong>千万不要选 VirtIO 驱动！除非你第一次安装就自己配置内核而且不使用 genkernel 生成的 initramfs。</strong><br>因为以前被坑过无数次了，所以这次第一次安装我选择 genkernel 直接搞定。而 genkernel 在不加参数的情况下是不会选中任何 virtIO 相关选项的……（这是我后来才知道的）。所以如果不想被 genkernel 坑死的话就不要上 virtIO 驱动，至少安装系统时不要选。</p>
+<h1 id="安装-Gentoo-的指导"><a href="#安装-Gentoo-的指导" class="headerlink" title="安装 Gentoo 的指导"></a>安装 Gentoo 的指导</h1><p>本文不会完整记录安装 Gentoo 的流程，因为相比于我自己写的，官方的安装手册要专业得多。而对于大多数流程来说，参考手册就行了。<br>此外，相比几年前 Gentoo 安装手册中的不完整而且烂的翻译，现在的中文手册已经看不到英文了，而且中文的翻译质量也不差。所以大可以安心照手册安装，不会有什么让人摸不着头脑的地方的。<br>此处为安装手册的链接：<a target="_blank" rel="noopener" href="https://wiki.gentoo.org/wiki/Handbook:AMD64/zh-cn">Gentoo AMD64 Handbook</a> 感谢每一位翻译贡献者的努力！    </p>
+<h1 id="安装-Gentoo-的过程"><a href="#安装-Gentoo-的过程" class="headerlink" title="安装 Gentoo 的过程"></a>安装 Gentoo 的过程</h1><p>由于我本次安装使用的 init 是 systemd，而手册默认是为 openRC 准备的，因此我会写下不同于手册的，有关于 systemd 的配置。  </p>
+<h2 id="选择-stage3"><a href="#选择-stage3" class="headerlink" title="选择 stage3"></a>选择 stage3</h2><p>如果要用 systemd 的话，记得选带 systemd 的 stage3。<br>虽然使用 openRC 的也行，但是切换完配置后会下载编译 systemd 及其相关依赖，挺耗时间的。<br>对了，建议到镜像站下载，比如 tuna。</p>
+<h2 id="分区"><a href="#分区" class="headerlink" title="分区"></a>分区</h2><p>由于 PVE 默认使用 SeaBIOS，所以就不用 ESP 了。但如果硬盘使用 GPT 的话记得加一个 BIOS 启动分区。</p>
+<h2 id="选择配置文件"><a href="#选择配置文件" class="headerlink" title="选择配置文件"></a>选择配置文件</h2><p>如果你使用的是最新的 stage3 而且类型选择正确的话，这一步是可以跳过的。不过保险起见，还是用<code>eselect profile list</code>看一眼吧。<br>如果你发现系统默认的配置文件不是你想要的话，恭喜你，你多半选错 stage3 了！但其实也没什么，重新选择配置就行了，就是要多等一会了（指至少 1 小时，具体时间取决于机器配置，XD。</p>
+<h2 id="locale-配置"><a href="#locale-配置" class="headerlink" title="locale 配置"></a>locale 配置</h2><p>在更改<code>/etc/locale.gen</code>，运行<code>locale-gen</code>后，最后的选择 locale 就不能按照手册来了。直接修改/创建<code>/etc/locale.conf</code>，在里面输入<code>LANG=&quot;en_US.utf8&quot;</code>即可。</p>
+<blockquote>
+<p>此处非常不建议选择有关 zh_CN 的任何 locale。除非在安装时就安装好了桌面环境并确保一旦重新启动就能进入桌面，不然就等着满屏幕的口口口吧。</p>
+</blockquote>
+<h2 id="内核配置"><a href="#内核配置" class="headerlink" title="内核配置"></a>内核配置</h2><p>如果在这时配置 kernel 也是可以的，但我更喜欢在系统能正常使用的时候再折腾，所以使用 genkernel 一条龙服务吧。<br>而如果选择 genkernel 的话，之前的驱动选择就十分重要了。当然，如果你和我一样在安装时选择了 virtIO 驱动，很快就会看到我之前被卡了无数次的错误，以及 genkernel 对于 virtIO 无尽的坑。</p>
+<h2 id="主机名与-machine-ID"><a href="#主机名与-machine-ID" class="headerlink" title="主机名与 machine ID"></a>主机名与 machine ID</h2><p>systemd 需要一个 machine ID，运行<code>systemd-machine-id-setup</code>。<br>对于主机名，直接在<code>/etc/hostname</code>写就行了。默认该文件是自己创建的，所以看到 nano 显示是新文件时不用惊慌。<br>对了，记得把<code>/etc/hosts</code>中的<code>localhost</code>改为自己的主机名。</p>
+<h2 id="网络配置"><a href="#网络配置" class="headerlink" title="网络配置"></a>网络配置</h2><p>如果使用 dhcp 的话，记得重启后一波<code>systemctl enable dhcpcd.service</code>和<code>systemctl start dhcpcd.service</code>二连就行。<br>但如果你和我一样使用静态 IP 的话，就不能使用 dhcpcd 了。</p>
+<blockquote>
+<p>其实按照 wiki，是可以使用 dhcpcd 配置静态 IP 的，但我尝试了没成功。</p>
+</blockquote>
+<p>此处使用 systemd-networkd 配置静态 IP。在<code>/etc/systemd/network</code>下创建 network 配置文件，比如下面的配置文件<code>20-wired.network</code>：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[Match]</span><br><span class="line">Name&#x3D;enp1s0</span><br><span class="line"></span><br><span class="line">[Network]</span><br><span class="line">Address&#x3D;10.1.10.9&#x2F;24</span><br><span class="line">Gateway&#x3D;10.1.10.1</span><br><span class="line">DNS&#x3D;10.1.10.1</span><br><span class="line">#DNS&#x3D;8.8.8.8</span><br></pre></td></tr></table></figure>
+<p>记得把<code>Name</code>改为自己的网卡名称。<br>对了，重启后也要进行<code>systemctl enable systemd-networkd.service</code>与<code>systemctl start systemd-networkd.service</code>二连。</p>
+<h2 id="日志工具"><a href="#日志工具" class="headerlink" title="日志工具"></a>日志工具</h2><p>因为 systemd 已经自带了，所以手册关于安装日志工具的部分跳过就好。</p>
+<h1 id="关于错误：block-device-is-not-a-valid-root-device-的解决方法"><a href="#关于错误：block-device-is-not-a-valid-root-device-的解决方法" class="headerlink" title="关于错误：block device is not a valid root device 的解决方法"></a>关于错误：block device is not a valid root device 的解决方法</h1><p>如果你和我一样在安装时 scsi 控制器选择了 virtIO 驱动时，就会在开机时看到以下类似错误：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;dev&#x2F;loop0: TYPE&#x3D;&quot;squashfs&quot;</span><br><span class="line">&#x2F;dev&#x2F;sda2: UUID&#x3D;&quot;eefd6088-354b-4b5b-97d8-5df2df******&quot; TYPE&#x3D;&quot;swap&quot; PARTLABEL&#x3D;&quot;primary&quot; PARTUUID&#x3D;&quot;ea452ed8-8b99-4a26-a662-ab43c******&quot;</span><br><span class="line">............</span><br><span class="line"></span><br><span class="line">block device is not a valid root device</span><br></pre></td></tr></table></figure>
+<p>并且只能进入紧急命令行。<br>不要急，进入紧急命令行，看看<code>/dev/</code>下有什么。<br>如果我没猜错，安装根文件的 sda，要么不见了，要么变成了 hda。<br>对于我的情况，是直接不见了。<br>这种情况一般是 scsi 控制器出问题了，而且多半是驱动问题，导致根文件所在的硬盘无法加载。<br>而我的情况是，内核没有打入任何 virtIO 驱动，initramfs 也没有。<br>这就是 genkernel 对于 virtIO 的巨坑，因为它对 genkernel 支持不佳，内核编译时不会选中相关选项，就算自己选上了，在制作 initramfs 时也不会打入 virtIO 相关模块。<br>如果想要 genkernel 加上 virtIO 选项以及在 initramfs 中打入相关模块，请加上<code>--virtio</code>的选项。<br>同时，要自己配置内核时，也要选中 virtIO 的相关选项。<br>具体可参见<a target="_blank" rel="noopener" href="https://wiki.gentoo.org/wiki/User:Flow/Gentoo_as_KVM_guest">User:Flow/Gentoo as KVM guest</a></p>
+</div><div class="article-licensing box"><div class="licensing-title"><p>从零开始搭建 Home Lab 3 安装 Gentoo 中的那些坑</p><p><a href="https://williamgong.github.io/2021/05/12/%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E6%90%AD%E5%BB%BAhomelab3/">https://williamgong.github.io/2021/05/12/%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E6%90%AD%E5%BB%BAhomelab3/</a></p></div><div class="licensing-meta level is-mobile"><div class="level-left"><div class="level-item is-narrow"><div><h6>作者</h6><p>William Gong</p></div></div><div class="level-item is-narrow"><div><h6>发布于</h6><p>2021-05-13</p></div></div><div class="level-item is-narrow"><div><h6>更新于</h6><p>2021-10-12</p></div></div><div class="level-item is-narrow"><div><h6>许可协议</h6><p><a class="icon" rel="noopener" target="_blank" title="Creative Commons" href="https://creativecommons.org/"><i class="fab fa-creative-commons"></i></a><a class="icon" rel="noopener" target="_blank" title="Attribution" href="https://creativecommons.org/licenses/by/4.0/"><i class="fab fa-creative-commons-by"></i></a><a class="icon" rel="noopener" target="_blank" title="Noncommercial" href="https://creativecommons.org/licenses/by-nc/4.0/"><i class="fab fa-creative-commons-nc"></i></a></p></div></div></div></div></div><div class="article-tags is-size-7 mb-4"><span class="mr-2">#</span><a class="link-muted mr-2" rel="tag" href="/tags/Linux/">Linux</a><a class="link-muted mr-2" rel="tag" href="/tags/Gentoo/">Gentoo</a></div><!--!--></article></div><!--!--><nav class="post-navigation mt-4 level is-mobile"><div class="level-start"><a class="article-nav-prev level level-item link-muted" href="/2021/06/24/%E5%9C%A8pve%E4%B8%AD%E5%A2%9E%E5%8A%A0%E8%99%9A%E6%8B%9F%E6%9C%BA%E5%AF%B9tpm%E7%9A%84%E6%94%AF%E6%8C%81/"><i class="level-item fas fa-chevron-left"></i><span class="level-item">在 Proxmox VE 中添加 vTPM 的支持</span></a></div><div class="level-end"><a class="article-nav-next level level-item link-muted" href="/2021/05/05/%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E6%90%AD%E5%BB%BAhomelab2/"><span class="level-item">从零开始搭建 Home Lab 2 Proxmox VE 的搭建</span><i class="level-item fas fa-chevron-right"></i></a></div></nav><!--!--></div><div class="column column-left is-4-tablet is-4-desktop is-4-widescreen  order-1 is-sticky"><div class="card widget" data-type="profile"><div class="card-content"><nav class="level"><div class="level-item has-text-centered flex-shrink-1"><div><figure class="image is-128x128 mx-auto mb-2"><img class="avatar" src="/images/avatar.png" alt="William Gong"></figure><p class="title is-size-4 is-block" style="line-height:inherit;">William Gong</p><p class="is-size-6 is-block">一条咸鱼</p><p class="is-size-6 is-flex justify-content-center"><i class="fas fa-map-marker-alt mr-1"></i><span>Guangzhou China</span></p></div></div></nav><nav class="level is-mobile"><div class="level-item has-text-centered is-marginless"><div><p class="heading">文章</p><a href="/archives"><p class="title">11</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">分类</p><a href="/categories"><p class="title">4</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">标签</p><a href="/tags"><p class="title">9</p></a></div></div></nav><div class="level"><a class="level-item button is-primary is-rounded" href="https://github.com/WilliamGong" target="_blank" rel="noopener">关注我</a></div><div class="level is-mobile"><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Github" href="https://github.com/WilliamGong"><i class="fab fa-github"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Zhihu" href="https://www.zhihu.com/people/gong-tai-lin"><i class="fab fa-zhihu"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="RSS" href="/atom.xml"><i class="fas fa-rss"></i></a></div></div></div><div class="card widget" id="toc" data-type="toc"><div class="card-content"><div class="menu"><h3 class="menu-label">目录</h3><ul class="menu-list"><li><a class="level is-mobile" href="#创建虚拟机"><span class="level-left"><span class="level-item">1</span><span class="level-item">创建虚拟机</span></span></a></li><li><a class="level is-mobile" href="#安装-Gentoo-的指导"><span class="level-left"><span class="level-item">2</span><span class="level-item">安装 Gentoo 的指导</span></span></a></li><li><a class="level is-mobile" href="#安装-Gentoo-的过程"><span class="level-left"><span class="level-item">3</span><span class="level-item">安装 Gentoo 的过程</span></span></a><ul class="menu-list"><li><a class="level is-mobile" href="#选择-stage3"><span class="level-left"><span class="level-item">3.1</span><span class="level-item">选择 stage3</span></span></a></li><li><a class="level is-mobile" href="#分区"><span class="level-left"><span class="level-item">3.2</span><span class="level-item">分区</span></span></a></li><li><a class="level is-mobile" href="#选择配置文件"><span class="level-left"><span class="level-item">3.3</span><span class="level-item">选择配置文件</span></span></a></li><li><a class="level is-mobile" href="#locale-配置"><span class="level-left"><span class="level-item">3.4</span><span class="level-item">locale 配置</span></span></a></li><li><a class="level is-mobile" href="#内核配置"><span class="level-left"><span class="level-item">3.5</span><span class="level-item">内核配置</span></span></a></li><li><a class="level is-mobile" href="#主机名与-machine-ID"><span class="level-left"><span class="level-item">3.6</span><span class="level-item">主机名与 machine ID</span></span></a></li><li><a class="level is-mobile" href="#网络配置"><span class="level-left"><span class="level-item">3.7</span><span class="level-item">网络配置</span></span></a></li><li><a class="level is-mobile" href="#日志工具"><span class="level-left"><span class="level-item">3.8</span><span class="level-item">日志工具</span></span></a></li></ul></li><li><a class="level is-mobile" href="#关于错误：block-device-is-not-a-valid-root-device-的解决方法"><span class="level-left"><span class="level-item">4</span><span class="level-item">关于错误：block device is not a valid root device 的解决方法</span></span></a></li></ul></div></div><style>.menu-list > li > a.is-active + .menu-list { display: block; }.menu-list > li > a + .menu-list { display: none; }</style><script src="/js/toc.js" defer></script></div><div class="card widget" data-type="categories"><div class="card-content"><div class="menu"><h3 class="menu-label">分类</h3><ul class="menu-list"><li><a class="level is-mobile" href="/categories/Android/"><span class="level-start"><span class="level-item">Android</span></span><span class="level-end"><span class="level-item tag">3</span></span></a></li><li><a class="level is-mobile" href="/categories/Home-Lab/"><span class="level-start"><span class="level-item">Home Lab</span></span><span class="level-end"><span class="level-item tag">4</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%8D%9A%E5%AE%A2%E6%90%AD%E5%BB%BA/"><span class="level-start"><span class="level-item">博客搭建</span></span><span class="level-end"><span class="level-item tag">3</span></span></a></li><li><a class="level is-mobile" href="/categories/%E6%9D%82%E8%B0%88/"><span class="level-start"><span class="level-item">杂谈</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li></ul></div></div></div><div class="card widget" data-type="archives"><div class="card-content"><div class="menu"><h3 class="menu-label">归档</h3><ul class="menu-list"><li><a class="level is-mobile" href="/archives/2021/06/"><span class="level-start"><span class="level-item">六月 2021</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2021/05/"><span class="level-start"><span class="level-item">五月 2021</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/archives/2021/04/"><span class="level-start"><span class="level-item">四月 2021</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2021/03/"><span class="level-start"><span class="level-item">三月 2021</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2020/10/"><span class="level-start"><span class="level-item">十月 2020</span></span><span class="level-end"><span class="level-item tag">6</span></span></a></li></ul></div></div></div><div class="card widget" data-type="tags"><div class="card-content"><div class="menu"><h3 class="menu-label">标签</h3><div class="field is-grouped is-grouped-multiline"><div class="control"><a class="tags has-addons" href="/tags/Android/"><span class="tag">Android</span><span class="tag">3</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Gentoo/"><span class="tag">Gentoo</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Linux/"><span class="tag">Linux</span><span class="tag">4</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Proxmox-VE/"><span class="tag">Proxmox VE</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%8D%9A%E5%AE%A2/"><span class="tag">博客</span><span class="tag">3</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%9D%82%E8%B0%88/"><span class="tag">杂谈</span><span class="tag">4</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E7%A1%AC%E4%BB%B6/"><span class="tag">硬件</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E7%BD%91%E7%BB%9C/"><span class="tag">网络</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E9%80%86%E5%90%91%E5%B7%A5%E7%A8%8B/"><span class="tag">逆向工程</span><span class="tag">3</span></a></div></div></div></div></div></div><!--!--></div></div></section><footer class="footer"><div class="container"><div class="level"><div class="level-start"><a class="footer-logo is-block mb-2" href="/">WilliamGong</a><p class="is-size-7"><span>&copy; 2021 William Gong</span>  Powered by <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a> &amp; <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank" rel="noopener">Icarus</a><br><span id="busuanzi_container_site_uv">共<span id="busuanzi_value_site_uv">0</span>个访客</span></p></div><div class="level-end"><div class="field has-addons"><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Creative Commons" href="https://creativecommons.org/"><i class="fab fa-creative-commons"></i></a></p><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/"><i class="fab fa-creative-commons-by"></i></a></p><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/WilliamGong/hexo-blog"><i class="fab fa-github"></i></a></p></div></div></div></div></footer><script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script><script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" async></script><script>moment.locale("zh-CN");</script><script>var IcarusThemeSettings = {
+            article: {
+                highlight: {
+                    clipboard: true,
+                    fold: 'unfolded'
+                }
+            }
+        };</script><script src="/js/column.js"></script><script src="/js/animation.js"></script><a id="back-to-top" title="回到顶端" href="javascript:;"><i class="fas fa-chevron-up"></i></a><script src="/js/back_to_top.js" defer></script><!--!--><!--!--><!--!--><!--!--><script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script><script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script><script>window.addEventListener("load", () => {
+            if (typeof $.fn.lightGallery === 'function') {
+                $('.article').lightGallery({ selector: '.gallery-item' });
+            }
+            if (typeof $.fn.justifiedGallery === 'function') {
+                if ($('.justified-gallery > p > .gallery-item').length) {
+                    $('.justified-gallery > p > .gallery-item').unwrap();
+                }
+                $('.justified-gallery').justifiedGallery();
+            }
+        });</script><!--!--><!--!--><script type="text/x-mathjax-config">MathJax.Hub.Config({
+            'HTML-CSS': {
+                matchFontHeight: false
+            },
+            SVG: {
+                matchFontHeight: false
+            },
+            CommonHTML: {
+                matchFontHeight: false
+            },
+            tex2jax: {
+                inlineMath: [
+                    ['$','$'],
+                    ['\\(','\\)']
+                ]
+            }
+        });</script><script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script><!--!--><!--!--><!--!--><script src="/js/main.js" defer></script><div class="searchbox"><div class="searchbox-container"><div class="searchbox-header"><div class="searchbox-input-container"><input class="searchbox-input" type="text" placeholder="想要查找什么..."></div><a class="searchbox-close" href="javascript:;">×</a></div><div class="searchbox-body"></div></div></div><script src="/js/insight.js" defer></script><script>document.addEventListener('DOMContentLoaded', function () {
+            loadInsight({"contentUrl":"/content.json"}, {"hint":"想要查找什么...","untitled":"(无标题)","posts":"文章","pages":"页面","categories":"分类","tags":"标签"});
+        });</script></body></html>
