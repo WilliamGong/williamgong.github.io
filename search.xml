@@ -150,6 +150,39 @@
       </tags>
   </entry>
   <entry>
+    <title>LFS 的搭建 0 前言</title>
+    <url>/2021/11/15/lfs%E6%90%AD%E5%BB%BA0/</url>
+    <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>其实一开始要搭建 LFS 时，我是拒绝的。<br>但奈何自己手贱加学校的教务系统出问题，我同时选择了操作系统和操作系统课程设计。<br>而正常情况下是不能同时选择的。<br>而操作系统课程设计的大作业，就是搭 LFS。<br>也罢，这也是我的终极目标，虽然早了点，时间还被一大堆大作业和实验报告占满了，还有 ddl 催命。<br>于是，我就只能硬着头皮上了。        </p>
+<h1 id="选择的版本"><a href="#选择的版本" class="headerlink" title="选择的版本"></a>选择的版本</h1><p>秉承要安装就要最新版的原则，我选择了最新的11.0<br>对了，是 systemd 版本的。<br>不过根据现在 LCTT 的进度，中文版最新到 9.0，因此 11.0 的版本只能硬啃生肉。<br>当然，不同版本之间差距应该并不大，所以我会参考中文最新版的就是了。<br>也许这一波流程后我就可以去 LCTT 翻译文档了吧。 XD       </p>
+<h1 id="需要的工具"><a href="#需要的工具" class="headerlink" title="需要的工具"></a>需要的工具</h1><p>首先，当然是一份 LFS 文档（<br>对于 LFS 的搭建，需要一个宿主机，目前选择为我现在在服务器上跑的 Gentoo 开发机。当然也可以选择用 liveCD，不过考虑到 LFS 要装很长时间，liveCD 并不好用。<br>至于要安装的机器，当然是虚拟机啦，配置如下：</p>
+<ul>
+<li>CPU：Intel G5420 4线程 amd64</li>
+<li>内存：4G</li>
+<li>SCSI 控制器：LSI 53C895A</li>
+<li>硬盘：32G，挂载到宿主机的 <code>/mnt/lfs/</code></li>
+<li>网卡：Realtek RTL8139</li>
+<li>BIOS：OVMF (UEFI)</li>
+</ul>
+<p>考虑到兼容性，目前不使用任何半虚拟化驱动</p>
+<h1 id="主要安装流程"><a href="#主要安装流程" class="headerlink" title="主要安装流程"></a>主要安装流程</h1><p>LFS 的安装一般分为以下几个流程：</p>
+<ol>
+<li>准备工作：包括分区和编译临时工具链</li>
+<li>安装：手动编译各软件包</li>
+<li>配置：配置<strong>各种各样</strong>的配置文件</li>
+</ol>
+<p>具体流程其实和安装 Gentoo 差不多，但 LFS 既不会帮你自动编译也不提供 stage。可谓是真·从零开始。</p>
+<h1 id="与标准-LFS-流程的改动"><a href="#与标准-LFS-流程的改动" class="headerlink" title="与标准 LFS 流程的改动"></a>与标准 LFS 流程的改动</h1><p>我在安装 LFS时，不会完全按照文档进行。<br>首先，我可能会使用一些其他发行版的工具，比如 Gentoo 的 genkernel 之类的（虽然这玩意真的很难用）<br>以及我会大量使用已经存在的配置文件，比如其他发行版的 fstab 等<br>我也会参考 Gentoo 或 Arch 等相关 wiki，毕竟这些文档可是相当好用的。</p>
+<h1 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h1><p>撒，开始吧。</p>
+]]></content>
+      <categories>
+        <category>LFS</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>LFS</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>从零开始搭建 Home Lab 0 硬件的选择与架构方案的确定</title>
     <url>/2021/03/28/%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E6%90%AD%E5%BB%BAhomelab0/</url>
     <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>搭建 Home Lab 的想法，起源于我有一次运行虚拟机的时候。<br>虽然我现在的主力笔记本性能不差，16G 内存 + 256G SSD，但众所周知 Chrome 是著名的性能消耗大户，导致我的内存有一半被它吞了；而且由于笔记本上安装的重型软件和游戏实在太多了，尤其是游戏，占了 60G+ 的空间，导致剩余硬盘空间捉襟见肘。因此每一次使用虚拟机时，都要扣扣索索的盘算着分配的内存和虚拟磁盘的容量。更令人恼火的是，每次创建虚拟机，都要删掉一个游戏或者是占用了大量磁盘空间的软件，而且每次跑虚拟机只是测试一下而已，没过多久就要删，而删去虚拟机的时候再去下载这些程序是十分痛苦的事情。因此我便产生了专门买服务器跑虚拟机的想法。<br>而搭建 Home Lab 的另外一个原因，是因为折腾。<br>曾经我一直在一台 10 年前购入的 Lenovo 笔记本上跑 Gentoo，但由于<strong>各 种 各 样</strong>的原因，Gentoo 一直没安装成功，这称为了我心中的一根刺；而且我手头缺少一台 Linux 开发机，虽然 WSL 已经能满足大部分需求，但有些东西是 WSL 做不到的。而搭建一台 Home Lab，能做到All in One，开发机什么的将不再是问题。      </p>
@@ -178,9 +211,9 @@
         <category>Home Lab</category>
       </categories>
       <tags>
+        <tag>Linux</tag>
         <tag>硬件</tag>
         <tag>网络</tag>
-        <tag>Linux</tag>
       </tags>
   </entry>
   <entry>
