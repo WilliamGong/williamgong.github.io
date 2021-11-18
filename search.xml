@@ -159,7 +159,7 @@
 <li>CPU：Intel G5420 4线程 amd64</li>
 <li>内存：4G</li>
 <li>SCSI 控制器：LSI 53C895A</li>
-<li>硬盘：32G，挂载到宿主机的 <code>/mnt/lfs/</code></li>
+<li>硬盘：32G</li>
 <li>网卡：Realtek RTL8139</li>
 <li>BIOS：OVMF (UEFI)</li>
 </ul>
