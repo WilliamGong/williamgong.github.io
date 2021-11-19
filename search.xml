@@ -183,6 +183,67 @@
       </tags>
   </entry>
   <entry>
+    <title>lfs搭建 1 准备工作</title>
+    <url>/2021/11/19/lfs%E6%90%AD%E5%BB%BA1/</url>
+    <content><![CDATA[<p>那么，现在就正式开始。<br>目前目标机的硬盘在宿主机的位置为<code>/dev/sdb</code>。      </p>
+<h1 id="分区"><a href="#分区" class="headerlink" title="分区"></a>分区</h1><p>目前的分区方案如下<br>|分区位置|大小|类型（挂载点）|<br>|—|—|—|<br>|<code>/dev/sdb1</code>|256M|EFI 分区|<br>|<code>/dev/sdb2</code>|4G|swap|<br>|<code>/dev/sdb3</code>|剩余部分|<code>/</code>|</p>
+<p>现在采用 <code>parted</code> 进行分区      </p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"># parted &#x2F;dev&#x2F;sdb</span><br><span class="line">(parted) mklabel gpt</span><br><span class="line">(parted) mkpart ESP fat32 1M 257M</span><br><span class="line">(parted) set 1 boot on</span><br><span class="line">(parted) mkpart primary linux-swap 257M 4353M</span><br><span class="line">(parted) mkpart primary ext4 4353M -1</span><br></pre></td></tr></table></figure>
+<h1 id="建立文件系统"><a href="#建立文件系统" class="headerlink" title="建立文件系统"></a>建立文件系统</h1><p>分区完成后，接下来就是格式化。<br>目前，ESP 分区采用 fat32，根分区采用 ext4。      </p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">mkfs.vfat &#x2F;dev&#x2F;sdb1</span><br><span class="line">mkswap &#x2F;dev&#x2F;sdb2</span><br><span class="line">mkfs.ext4 &#x2F;dev&#x2F;sdb3</span><br></pre></td></tr></table></figure>
+<h1 id="设置环境变量"><a href="#设置环境变量" class="headerlink" title="设置环境变量"></a>设置环境变量</h1><p>首先，根据 LFS 手册的要求，设置<code>LFS</code>环境变量。<br>从现在开始，宿主机就要进入 root 进行操作了，当然理论上一直 sudo 也可以，但为了方便且预防一些奇奇怪怪的错误，还是进入 root 操作吧。<br>此处<code>$LFS</code>的值为 LFS 根分区在宿主机挂载点的位置。       </p>
+<pre><code>export LFS=/mnt/lfs</code></pre>
+<p>当然，也可以直接写在<code>~/.bashrc</code>里，方便。     </p>
+<h1 id="挂载分区"><a href="#挂载分区" class="headerlink" title="挂载分区"></a>挂载分区</h1><p>现在就可以挂载分区了。<br>再设置好<code>$LFS</code>后，进行这些需要输入路径的操作就方便多了。<br>考虑到标准位置，把 ESP 挂载到<code>$LFS/boot/efi</code>下。     </p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"># mount &#x2F;dev&#x2F;sdb3 $LFS</span><br><span class="line"># mkdir -p $LFS&#x2F;boot&#x2F;efi</span><br><span class="line"># mount &#x2F;dev&#x2F;sdb1 $LFS&#x2F;boot&#x2F;efi</span><br></pre></td></tr></table></figure>
+<h1 id="准备软件包"><a href="#准备软件包" class="headerlink" title="准备软件包"></a>准备软件包</h1><p>首先建立一个软件包存放目录，且这个目录 LFS 会要求打开粘滞模式。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">mkdir -v $LFS&#x2F;sources</span><br><span class="line">chmod -v a+wt $LFS&#x2F;sources</span><br></pre></td></tr></table></figure>
+<p>这里使用 ustc 的镜像，镜像地址：<br><a href="http://mirrors.ustc.edu.cn/lfs/lfs-packages/11.0/">http://mirrors.ustc.edu.cn/lfs/lfs-packages/11.0/</a><br>本来要打算使用镜像里的 <code>wget-list</code>，但是好家伙，打开一看地址都是源地址，完美镜像。<br>而且此时 LCTT 给的列表是9.0的……<br>不过好心的 ustc 给了 tar 包。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"># cd $LFS&#x2F;sources</span><br><span class="line"># wget http:&#x2F;&#x2F;mirrors.ustc.edu.cn&#x2F;lfs&#x2F;lfs-packages&#x2F;lfs-packages-11.0.tar</span><br><span class="line"># tar -xvf lfs-packages-11.0.tar</span><br></pre></td></tr></table></figure>
+<p>此处对文件进行一些整理</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"># mv $LFS&#x2F;sources&#x2F;11.0&#x2F;* $LFS&#x2F;sources&#x2F;</span><br><span class="line"># rm -r 11.0&#x2F;</span><br><span class="line"># rm lfs-packages-11.0.tar</span><br></pre></td></tr></table></figure>
+<p>此处也可以检查下 checksum。      </p>
+<h1 id="准备阶段收尾工作"><a href="#准备阶段收尾工作" class="headerlink" title="准备阶段收尾工作"></a>准备阶段收尾工作</h1><p>该部分主要是设置目录，用户，环境变量等一系列配置。      </p>
+<h2 id="建立系统目录"><a href="#建立系统目录" class="headerlink" title="建立系统目录"></a>建立系统目录</h2><p>建立一些之后编译安装软件包时会用到的系统目录。<br>但此处创建的目录并不完全。<br>使用下面的脚本，以 root 运行。     </p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">#!&#x2F;bin&#x2F;bash</span><br><span class="line"></span><br><span class="line">mkdir -pv $LFS&#x2F;&#123;etc,var&#125; $LFS&#x2F;usr&#x2F;&#123;bin,lib,sbin&#125;</span><br><span class="line"></span><br><span class="line">for i in bin lib sbin; do</span><br><span class="line">ln -sv usr&#x2F;$i $LFS&#x2F;$i</span><br><span class="line">done</span><br><span class="line"></span><br><span class="line">case $(uname -m) in</span><br><span class="line">x86_64) mkdir -pv $LFS&#x2F;lib64 ;;</span><br><span class="line">esac</span><br></pre></td></tr></table></figure>
+<h2 id="建立工具目录"><a href="#建立工具目录" class="headerlink" title="建立工具目录"></a>建立工具目录</h2><p>还要建立一个存放临时工具链的目录。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"># mkdir -pv $LFS&#x2F;tools</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>相比于 9.0 的手册，11.0 版本少了将这个工具目录连接到<code>/</code>的操作，emmmmmm</p>
+</blockquote>
+<h2 id="创建-LFS-用户"><a href="#创建-LFS-用户" class="headerlink" title="创建 LFS 用户"></a>创建 LFS 用户</h2><p>毕竟在 root 下进行编译是十分危险的，创建一个普通用户很有必要。<br>虽说自用的用户就行，但在安装过程中还要设置一大堆环境变量，没人想把自己用户的环境变量搞得一团糟吧？      </p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"># groupadd lfs</span><br><span class="line"># useradd -s &#x2F;bin&#x2F;bash -g lfs -m -k &#x2F;dev&#x2F;null lfs</span><br></pre></td></tr></table></figure>
+<p>此处创建用户的参数就根据自己的喜好了。<br>记得设置密码。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"># passwd lfs</span><br></pre></td></tr></table></figure>
+<p>接下来要将 <code>$LFS</code>的目录的所有权改为 lfs。<br>因为指南提供的是多行代码，因此使用脚本运行要方便些。    </p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">#!&#x2F;bin&#x2F;bash</span><br><span class="line">chown -v lfs $LFS&#x2F;&#123;usr&#123;,&#x2F;*&#125;,lib,var,etc,bin,sbin,tools&#125;</span><br><span class="line">case $(uname -m) in</span><br><span class="line">x86_64) chown -v lfs $LFS&#x2F;lib64 ;;</span><br><span class="line">esac</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>当然这些目录的所有者后期是要改回来的，不然会出事情的。</p>
+</blockquote>
+<p>同时软件包源码目录的所有者也要改</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"># chown -v lfs $LFS&#x2F;sources</span><br></pre></td></tr></table></figure>
+<p>现在，就要登录 lfs 用户进行操作了。<br>如果要直接切换，使用<code>su - lfs</code>。</p>
+<h2 id="设置环境变量-1"><a href="#设置环境变量-1" class="headerlink" title="设置环境变量"></a>设置环境变量</h2><p>首先在<code>~/.bash_profile</code>里加上如下内容：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">exec env -i HOME&#x3D;$HOME TERM&#x3D;$TERM PS1&#x3D;&#39;\u:\w\$ &#39; &#x2F;bin&#x2F;bash</span><br></pre></td></tr></table></figure>
+<p>用于清除多余的环境变量。<br>之后再在<code>~/.bashrc</code>里加上如下内容：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">set +h</span><br><span class="line">umask 022</span><br><span class="line">LFS&#x3D;&#x2F;mnt&#x2F;lfs</span><br><span class="line">LC_ALL&#x3D;POSIX</span><br><span class="line">LFS_TGT&#x3D;$(uname -m)-lfs-linux-gnu</span><br><span class="line">PATH&#x3D;&#x2F;usr&#x2F;bin</span><br><span class="line">if [ ! -L &#x2F;bin ]; then PATH&#x3D;&#x2F;bin:$PATH; fi</span><br><span class="line">PATH&#x3D;$LFS&#x2F;tools&#x2F;bin:$PATH</span><br><span class="line">CONFIG_SITE&#x3D;$LFS&#x2F;usr&#x2F;share&#x2F;config.site</span><br><span class="line">export LFS LC_ALL LFS_TGT PATH CONFIG_SITE</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>如果 lfs 使用了其他的 shell，需要根据具体 shell 确定写入的文件。<br>比如我用的是zsh，以上内容就要写到<code>~/.zprofile</code>和<code>~/.zshrc</code>里，同时 shell 的路径也要相应改动。<br>别无脑写进 bashrc，不然之后环境变量没配置成功还不知道呢。</p>
+</blockquote>
+<p>最后，运行</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">source ~&#x2F;.bash_profile</span><br></pre></td></tr></table></figure>
+
+<p>至此，准备部分结束。</p>
+]]></content>
+      <categories>
+        <category>LFS</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>LFS</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>从零开始搭建 Home Lab 0 硬件的选择与架构方案的确定</title>
     <url>/2021/03/28/%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E6%90%AD%E5%BB%BAhomelab0/</url>
     <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>搭建 Home Lab 的想法，起源于我有一次运行虚拟机的时候。<br>虽然我现在的主力笔记本性能不差，16G 内存 + 256G SSD，但众所周知 Chrome 是著名的性能消耗大户，导致我的内存有一半被它吞了；而且由于笔记本上安装的重型软件和游戏实在太多了，尤其是游戏，占了 60G+ 的空间，导致剩余硬盘空间捉襟见肘。因此每一次使用虚拟机时，都要扣扣索索的盘算着分配的内存和虚拟磁盘的容量。更令人恼火的是，每次创建虚拟机，都要删掉一个游戏或者是占用了大量磁盘空间的软件，而且每次跑虚拟机只是测试一下而已，没过多久就要删，而删去虚拟机的时候再去下载这些程序是十分痛苦的事情。因此我便产生了专门买服务器跑虚拟机的想法。<br>而搭建 Home Lab 的另外一个原因，是因为折腾。<br>曾经我一直在一台 10 年前购入的 Lenovo 笔记本上跑 Gentoo，但由于<strong>各 种 各 样</strong>的原因，Gentoo 一直没安装成功，这称为了我心中的一根刺；而且我手头缺少一台 Linux 开发机，虽然 WSL 已经能满足大部分需求，但有些东西是 WSL 做不到的。而搭建一台 Home Lab，能做到All in One，开发机什么的将不再是问题。      </p>
