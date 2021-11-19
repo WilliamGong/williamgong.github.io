@@ -183,7 +183,7 @@
       </tags>
   </entry>
   <entry>
-    <title>lfs搭建 1 准备工作</title>
+    <title>LFS 搭建 1 准备工作</title>
     <url>/2021/11/19/lfs%E6%90%AD%E5%BB%BA1/</url>
     <content><![CDATA[<p>那么，现在就正式开始。<br>目前目标机的硬盘在宿主机的位置为<code>/dev/sdb</code>。      </p>
 <h1 id="分区"><a href="#分区" class="headerlink" title="分区"></a>分区</h1><p>目前的分区方案如下<br>|分区位置|大小|类型（挂载点）|<br>|—|—|—|<br>|<code>/dev/sdb1</code>|256M|EFI 分区|<br>|<code>/dev/sdb2</code>|4G|swap|<br>|<code>/dev/sdb3</code>|剩余部分|<code>/</code>|</p>
