@@ -186,7 +186,31 @@
     <title>LFS 搭建 1 准备工作</title>
     <url>/2021/11/19/lfs%E6%90%AD%E5%BB%BA1/</url>
     <content><![CDATA[<p>那么，现在就正式开始。<br>目前目标机的硬盘在宿主机的位置为<code>/dev/sdb</code>。      </p>
-<h1 id="分区"><a href="#分区" class="headerlink" title="分区"></a>分区</h1><p>目前的分区方案如下<br>|分区位置|大小|类型（挂载点）|<br>|—|—|—|<br>|<code>/dev/sdb1</code>|256M|EFI 分区|<br>|<code>/dev/sdb2</code>|4G|swap|<br>|<code>/dev/sdb3</code>|剩余部分|<code>/</code>|</p>
+<h1 id="分区"><a href="#分区" class="headerlink" title="分区"></a>分区</h1><p>目前的分区方案如下</p>
+<table>
+<thead>
+<tr>
+<th>分区位置</th>
+<th>大小</th>
+<th>类型（挂载点）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>/dev/sdb1</code></td>
+<td>256M</td>
+<td>EFI 分区</td>
+</tr>
+<tr>
+<td><code>/dev/sdb2</code></td>
+<td>4G</td>
+<td>swap</td>
+</tr>
+<tr>
+<td><code>/dev/sdb3</code></td>
+<td>剩余部分</td>
+<td><code>/</code></td>
+</tr>
+</tbody></table>
 <p>现在采用 <code>parted</code> 进行分区      </p>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"># parted &#x2F;dev&#x2F;sdb</span><br><span class="line">(parted) mklabel gpt</span><br><span class="line">(parted) mkpart ESP fat32 1M 257M</span><br><span class="line">(parted) set 1 boot on</span><br><span class="line">(parted) mkpart primary linux-swap 257M 4353M</span><br><span class="line">(parted) mkpart primary ext4 4353M -1</span><br></pre></td></tr></table></figure>
 <h1 id="建立文件系统"><a href="#建立文件系统" class="headerlink" title="建立文件系统"></a>建立文件系统</h1><p>分区完成后，接下来就是格式化。<br>目前，ESP 分区采用 fat32，根分区采用 ext4。      </p>
