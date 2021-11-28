@@ -481,7 +481,7 @@
       </tags>
   </entry>
   <entry>
-    <title>lfs搭建3 Chroot 以及构建额外工具</title>
+    <title>LFS 搭建3 Chroot 以及构建额外工具</title>
     <url>/2021/11/27/lfs%E6%90%AD%E5%BB%BA3/</url>
     <content><![CDATA[<p>现在开始就要 chroot 了，同时现在开始用户也要从<code>lfs</code>到<code>root</code>。<br>不过这个顺序相比 9.0 差别太大了吧……<br>那么，现在就<code>su</code>吧。<br>记得设置<code>$LFS</code>:</p>
 <pre><code>export LFS=/mnt/lfs</code></pre>
