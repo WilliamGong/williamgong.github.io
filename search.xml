@@ -268,6 +268,332 @@
       </tags>
   </entry>
   <entry>
+    <title>LFS 搭建 2 构建临时系统</title>
+    <url>/2021/11/23/lfs%E6%90%AD%E5%BB%BA2/</url>
+    <content><![CDATA[<p>准备工作做完之后，就要开始搭建临时工具链了。<br>但说是工具链，其实还包括一些其他工具。</p>
+<h1 id="开始前的准备"><a href="#开始前的准备" class="headerlink" title="开始前的准备"></a>开始前的准备</h1><p>首先当然是登录<code>lfs</code>用户。<br>之后检查下<code>$LFS</code>是否设置正确。</p>
+<pre><code>echo $LFS</code></pre>
+<p>之后，需要检查以下部分是否正确设置，虽然大部分都不需要刻意留意，但不排除像我这样有特殊习惯的用户会不满足以下条件。    </p>
+<ol>
+<li><strong>shell 用的是 bash。</strong><br>不过目前大部分 shell 都是兼容 bash 的，比如我用的 zsh。</li>
+<li><strong>sh 符号链接到 bash。</strong><br>这个绝大多数发行版都满足。</li>
+<li><strong><code>/usr/bin/awk</code>符号链接到 gawk。</strong><br>这个也不用在意</li>
+<li><strong><code>/usr/bin/yacc</code> 是到 bison 的符号链接，或者是一个执行 bison 的小脚本。</strong><br>嗯，这个也是，除非你用的是 BSD（</li>
+</ol>
+<p>此外，对于构建过程，不要把源码放在<code>/mnt/lfs/tools</code>里，以免污染。<br>在没有特殊说明时，软件包的标准构建步骤如下</p>
+<ol>
+<li>解压并 cd 到源码目录</li>
+<li>根据 readme 编译，也可以 configure make make install 三连</li>
+<li>离开目录，再把它删了。</li>
+</ol>
+<p>现在，就正式开始构建。</p>
+<h1 id="构建交叉编译工具链"><a href="#构建交叉编译工具链" class="headerlink" title="构建交叉编译工具链"></a>构建交叉编译工具链</h1><p>现在先把目录切到<code>$LFS/sources</code>下。</p>
+<h2 id="Binutils-2-37-第一遍"><a href="#Binutils-2-37-第一遍" class="headerlink" title="Binutils-2.37 - 第一遍"></a>Binutils-2.37 - 第一遍</h2><p>先解压软件包</p>
+<pre><code>tar -xvf binutils-2.37.tar.xz</code></pre>
+<p>之后将 patch 放入目录并应用</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cp binutils-2.37-upstream_fix-1.patch .&#x2F;binutils-2.37</span><br><span class="line">cd .&#x2F;binutils-2.37</span><br><span class="line">patch -p1 &lt; binutils-2.37-upstream_fix-1.patch</span><br></pre></td></tr></table></figure>
+<p>现在需要确认 pty 能否在 chroot 环境里工作</p>
+<pre><code>expect -c &quot;spawn ls&quot;</code></pre>
+<p>如果不能显示<code>spawn ls</code>的话，就说明环境没有为 pty 正常工作设置好。不过大多数情况下装<code>expect</code>包就行了。<br>根据 Binutils 手册建议，创建<code>build</code>目录：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">mkdir build</span><br><span class="line">cd build</span><br></pre></td></tr></table></figure>
+<p>进行 configure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">..&#x2F;configure --prefix&#x3D;$LFS&#x2F;tools \</span><br><span class="line">            --with-sysroot&#x3D;$LFS \</span><br><span class="line">            --target&#x3D;$LFS_TGT \</span><br><span class="line">            --disable-nls \</span><br><span class="line">            --disable-werror</span><br></pre></td></tr></table></figure>
+<p>开始编译：</p>
+<pre><code>make</code></pre>
+<p>安装：</p>
+<pre><code>make install -j1</code></pre>
+<p>至于加上这个<code>-j1</code>的原因，是为了规避 make 中的一个问题。</p>
+<h2 id="GCC-11-2-0-第一遍"><a href="#GCC-11-2-0-第一遍" class="headerlink" title="GCC 11.2.0  - 第一遍"></a>GCC 11.2.0  - 第一遍</h2><p>解压</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf gcc-11.2.0.tar.xz</span><br><span class="line">cd gcc-11.2.0</span><br></pre></td></tr></table></figure>
+<p>此处 gcc 需要 GMP，MPFR 和 MPC 软件包，将源码解压进 gcc 目录并随 gcc 一起编译</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xf ..&#x2F;mpfr-4.1.0.tar.xz</span><br><span class="line">mv -v mpfr-4.1.0 mpfr</span><br><span class="line">tar -xf ..&#x2F;gmp-6.2.1.tar.xz</span><br><span class="line">mv -v gmp-6.2.1 gmp</span><br><span class="line">tar -xf ..&#x2F;mpc-1.2.1.tar.gz</span><br><span class="line">mv -v mpc-1.2.1 mpc</span><br></pre></td></tr></table></figure>
+<p>对于 x86-64 的宿主机，将 64 位库的默认目录设为<code>lib</code></p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">case $(uname -m) in</span><br><span class="line">x86_64)</span><br><span class="line">sed -e &#39;&#x2F;m64&#x3D;&#x2F;s&#x2F;lib64&#x2F;lib&#x2F;&#39; \</span><br><span class="line">-i.orig gcc&#x2F;config&#x2F;i386&#x2F;t-linux64</span><br><span class="line">;;</span><br><span class="line">esac</span><br></pre></td></tr></table></figure>
+<p>设置<code>build</code>目录：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">mkdir build</span><br><span class="line">cd build</span><br></pre></td></tr></table></figure>
+<p>之后是一段巨长的 configure：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">..&#x2F;configure \</span><br><span class="line">--target&#x3D;$LFS_TGT \</span><br><span class="line">--prefix&#x3D;$LFS&#x2F;tools \</span><br><span class="line">--with-glibc-version&#x3D;2.11 \</span><br><span class="line">--with-sysroot&#x3D;$LFS \</span><br><span class="line">--with-newlib \</span><br><span class="line">--without-headers \</span><br><span class="line">--enable-initfini-array \</span><br><span class="line">--disable-nls \</span><br><span class="line">--disable-shared \</span><br><span class="line">--disable-multilib \</span><br><span class="line">--disable-decimal-float \</span><br><span class="line">--disable-threads \</span><br><span class="line">--disable-libatomic \</span><br><span class="line">--disable-libgomp \</span><br><span class="line">--disable-libquadmath \</span><br><span class="line">--disable-libssp \</span><br><span class="line">--disable-libvtv \</span><br><span class="line">--disable-libstdcxx \</span><br><span class="line">--enable-languages&#x3D;c,c++</span><br></pre></td></tr></table></figure>
+<p>毕竟是交叉编译还是第一遍，这里对gcc关闭了一堆功能，主要是避免编译依赖标准库的代码<br>编译：</p>
+<pre><code>make</code></pre>
+<p>安装：</p>
+<pre><code>make install</code></pre>
+<p>此处还要补上<code>limits.h</code>，具体原因是在第一次编译时，<code>$LFS/usr/include/limits.h</code>还不存在，因此此时 gcc 安装的是不完整的，自给自足的头文件。虽然不加对于编译 glibc 已经足够，但后续步骤需要完整的内部头文件，因此此时手动将 gcc 源码中的相关头文件抽出。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cd ..</span><br><span class="line">cat gcc&#x2F;limitx.h gcc&#x2F;glimits.h gcc&#x2F;limity.h &gt; \</span><br><span class="line">&#96;dirname $($LFS_TGT-gcc -print-libgcc-file-name)&#96;&#x2F;install-tools&#x2F;include&#x2F;limits.h</span><br></pre></td></tr></table></figure>
+
+<h2 id="Linux-5-13-12-API-头文件"><a href="#Linux-5-13-12-API-头文件" class="headerlink" title="Linux-5.13.12 API 头文件"></a>Linux-5.13.12 API 头文件</h2><p>国际惯例进行解压</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf linux-5.13.12.tar.xz</span><br><span class="line">cd linux-5.13.12</span><br></pre></td></tr></table></figure>
+<p>这里只需要编译 glibc 用到的头文件，因此在确保目录里没有什么奇奇怪怪的东西（比如从其他地方 copy 进去的配置什么的）</p>
+<pre><code>make mrproper</code></pre>
+<p>之后再从源码中提取头文件然后手动复制到工具链目录下</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make headers</span><br><span class="line">find usr&#x2F;include -name &#39;.*&#39; -delete</span><br><span class="line">rm usr&#x2F;include&#x2F;Makefile</span><br><span class="line">cp -rv usr&#x2F;include $LFS&#x2F;usr</span><br></pre></td></tr></table></figure>
+<p>最后还是一样的删除整个目录。</p>
+<h2 id="Glibc-2-34"><a href="#Glibc-2-34" class="headerlink" title="Glibc-2.34"></a>Glibc-2.34</h2><p>glibc 2.34 需要加一个 patch</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf glibc-2.34.tar.xz</span><br><span class="line">cp glibc-2.34-fhs-1.patch glibc-2.34&#x2F;</span><br><span class="line">cd glibc-2.34&#x2F;</span><br><span class="line">patch -p1 &lt; glibc-2.34-fhs-1.patch</span><br></pre></td></tr></table></figure>
+<p>需要创建符合 LSB 的符号链接</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">case $(uname -m) in</span><br><span class="line">i?86) ln -sfv ld-linux.so.2 $LFS&#x2F;lib&#x2F;ld-lsb.so.3</span><br><span class="line">;;</span><br><span class="line">x86_64) ln -sfv ..&#x2F;lib&#x2F;ld-linux-x86-64.so.2 $LFS&#x2F;lib64</span><br><span class="line">ln -sfv ..&#x2F;lib&#x2F;ld-linux-x86-64.so.2 $LFS&#x2F;lib64&#x2F;ld-lsb-x86-64.so.3</span><br><span class="line">;;</span><br><span class="line">esac</span><br></pre></td></tr></table></figure>
+<p>之后是创建 build 目录：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">mkdir -v build</span><br><span class="line">cd build</span><br></pre></td></tr></table></figure>
+<p>现在要确保<code>ldconfig</code>和<code>sln</code>被安装到了<code>/usr/bin</code>      </p>
+<pre><code>echo &quot;rootsbindir=/usr/sbin&quot; &gt; configparms</code></pre>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">..&#x2F;configure \</span><br><span class="line">--prefix&#x3D;&#x2F;usr \</span><br><span class="line">--host&#x3D;$LFS_TGT \</span><br><span class="line">--build&#x3D;$(..&#x2F;scripts&#x2F;config.guess) \</span><br><span class="line">--enable-kernel&#x3D;3.2 \</span><br><span class="line">--with-headers&#x3D;$LFS&#x2F;usr&#x2F;include \</span><br><span class="line">libc_cv_slibdir&#x3D;&#x2F;usr&#x2F;lib</span><br></pre></td></tr></table></figure>
+<p>编译</p>
+<pre><code>make</code></pre>
+<p>安装</p>
+<pre><code>make DESTDIR=$LFS install</code></pre>
+<p>此处最好检查<code>$LFS</code>，如果该变量是空的话 glibc 是会装的宿主机的。<br>此处要修复一个<code>ldd</code>的硬编码错误：</p>
+<pre><code>sed &#39;/RTLDLIST=/s@/usr@@g&#39; -i $LFS/usr/bin/ldd</code></pre>
+<h2 id="第一次检查"><a href="#第一次检查" class="headerlink" title="第一次检查"></a>第一次检查</h2><p>当上述包都安装完了之后，就需要检查工具链的基本功能能否正常工作。<br>找一个不会污染源码的目录，运行</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">echo &#39;int main()&#123;&#125;&#39; &gt; dummy.c</span><br><span class="line">$LFS_TGT-gcc dummy.c</span><br><span class="line">readelf -l a.out | grep &#39;&#x2F;ld-linux&#39;</span><br></pre></td></tr></table></figure>
+<p>如果一切正常，就只会有以下输出</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">[Requesting program interpreter: &#x2F;lib64&#x2F;ld-linux-x86-64.so.2]</span><br></pre></td></tr></table></figure>
+<p>在 32 位机器上，解释器名字应该是<code>/lib/ld-linux.so.2.</code>。<br>现在删除刚刚创建的文件</p>
+<pre><code>rm -v dummy.c a.out</code></pre>
+<p>现在用 gcc 的工具安装<code>limits.h</code></p>
+<pre><code>$LFS/tools/libexec/gcc/$LFS_TGT/11.2.0/install-tools/mkheaders</code></pre>
+<blockquote>
+<p>虽然我在运行时会报错找不到文件，但<code>limits.h</code>确实安装到了目录<code>include-fixed</code>里</p>
+</blockquote>
+<h2 id="GCC-11-2-0-里的-Libstdc-第一遍"><a href="#GCC-11-2-0-里的-Libstdc-第一遍" class="headerlink" title="GCC-11.2.0 里的 Libstdc++ - 第一遍"></a>GCC-11.2.0 里的 Libstdc++ - 第一遍</h2><p>第一次编译 gcc 时，因为没有 glibc，因此并没有编译 libstdc++，现在安装了 glibc 后就需要编译它了。<br>现在解压 gcc 目录并创建 <code>build</code>：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf gcc-11.2.0.tar.xz</span><br><span class="line">cd gcc-11.2.0</span><br><span class="line">mkdir build</span><br><span class="line">cd build</span><br></pre></td></tr></table></figure>
+<p>之后是 configure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">..&#x2F;libstdc++-v3&#x2F;configure \</span><br><span class="line">--host&#x3D;$LFS_TGT \</span><br><span class="line">--build&#x3D;$(..&#x2F;config.guess) \</span><br><span class="line">--prefix&#x3D;&#x2F;usr \</span><br><span class="line">--disable-multilib \</span><br><span class="line">--disable-nls \</span><br><span class="line">--disable-libstdcxx-pch \</span><br><span class="line">--with-gxx-include-dir&#x3D;&#x2F;tools&#x2F;$LFS_TGT&#x2F;include&#x2F;c++&#x2F;11.2.0</span><br></pre></td></tr></table></figure>
+<p>之后就是编译安装二连</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make</span><br><span class="line">make DESTDIR&#x3D;$LFS install</span><br></pre></td></tr></table></figure>
+
+<h1 id="构建交叉编译临时工具"><a href="#构建交叉编译临时工具" class="headerlink" title="构建交叉编译临时工具"></a>构建交叉编译临时工具</h1><p>现在只是编译安装了基础的工具链，在此之上还要安装一些额外工具。<br>虽然说这些工具是在<code>chroot</code>之后用的，但现在就要编译。</p>
+<h2 id="M4-1-4-19"><a href="#M4-1-4-19" class="headerlink" title="M4-1.4.19"></a>M4-1.4.19</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf m4-1.4.19.tar.xz</span><br><span class="line">cd m4-1.4.19</span><br></pre></td></tr></table></figure>
+<p>此处不需要<code>build</code>目录。<br>configure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr \</span><br><span class="line">--host&#x3D;$LFS_TGT \</span><br><span class="line">--build&#x3D;$(build-aux&#x2F;config.guess)</span><br></pre></td></tr></table></figure>
+<p>编译和安装</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make</span><br><span class="line">make DESTDIR&#x3D;$LFS install</span><br></pre></td></tr></table></figure>
+<h2 id="Ncurses-6-2"><a href="#Ncurses-6-2" class="headerlink" title="Ncurses-6.2"></a>Ncurses-6.2</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf ncurses-6.2.tar.gz</span><br><span class="line">cd ncurses-6.2</span><br></pre></td></tr></table></figure>
+<p>首先要确保在 configure 时要找得到<code>gawk</code></p>
+<pre><code>sed -i s/mawk// configure</code></pre>
+<p>之后需要编译<code>tic</code>程序</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">mkdir build</span><br><span class="line">pushd build</span><br><span class="line">..&#x2F;configure</span><br><span class="line">make -C include</span><br><span class="line">make -C progs tic</span><br><span class="line">popd</span><br></pre></td></tr></table></figure>
+<p>之后**不要进入<code>build</code>**，直接开始 configure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr \</span><br><span class="line">--host&#x3D;$LFS_TGT \</span><br><span class="line">--build&#x3D;$(.&#x2F;config.guess) \</span><br><span class="line">--mandir&#x3D;&#x2F;usr&#x2F;share&#x2F;man \</span><br><span class="line">--with-manpage-format&#x3D;normal \</span><br><span class="line">--with-shared \</span><br><span class="line">--without-debug \</span><br><span class="line">--without-ada \</span><br><span class="line">--without-normal \</span><br><span class="line">--enable-widec</span><br></pre></td></tr></table></figure>
+<p>编译</p>
+<pre><code>make</code></pre>
+<p>安装</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make DESTDIR&#x3D;$LFS TIC_PATH&#x3D;$(pwd)&#x2F;build&#x2F;progs&#x2F;tic install</span><br><span class="line">echo &quot;INPUT(-lncursesw)&quot; &gt; $LFS&#x2F;usr&#x2F;lib&#x2F;libncurses.so</span><br></pre></td></tr></table></figure>
+<h2 id="Bash-5-1-8"><a href="#Bash-5-1-8" class="headerlink" title="Bash-5.1.8"></a>Bash-5.1.8</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf bash-5.1.8.tar.gz</span><br><span class="line">cd bash-5.1.8</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr \</span><br><span class="line">--build&#x3D;$(support&#x2F;config.guess) \</span><br><span class="line">--host&#x3D;$LFS_TGT \</span><br><span class="line">--without-bash-malloc</span><br></pre></td></tr></table></figure>
+<p>编译和安装</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make</span><br><span class="line">make DESTDIR&#x3D;$LFS install</span><br></pre></td></tr></table></figure>
+<p>加上<code>sh</code>到<code>bash</code>的符号链接</p>
+<pre><code>ln -sv bash $LFS/bin/sh</code></pre>
+<h2 id="Coreutils-8-32"><a href="#Coreutils-8-32" class="headerlink" title="Coreutils-8.32"></a>Coreutils-8.32</h2><p>此处要加一个 patch</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf coreutils-8.32.tar.xz</span><br><span class="line">cp coreutils-8.32-i18n-1.patch coreutils-8.32&#x2F;</span><br><span class="line">cd coreutils-8.32</span><br><span class="line">patch -Np1 -i coreutils-8.32-i18n-1.patch</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr \</span><br><span class="line">--host&#x3D;$LFS_TGT \</span><br><span class="line">--build&#x3D;$(build-aux&#x2F;config.guess) \</span><br><span class="line">--enable-install-program&#x3D;hostname \</span><br><span class="line">--enable-no-install-program&#x3D;kill,uptime</span><br></pre></td></tr></table></figure>
+<p>编译安装二连</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make</span><br><span class="line">make DESTDIR&#x3D;$LFS install</span><br></pre></td></tr></table></figure>
+<p>此处需要移动部分文件的位置以适应有些硬编码的程序</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">mv -v $LFS&#x2F;usr&#x2F;bin&#x2F;chroot $LFS&#x2F;usr&#x2F;sbin</span><br><span class="line">mkdir -pv $LFS&#x2F;usr&#x2F;share&#x2F;man&#x2F;man8</span><br><span class="line">mv -v $LFS&#x2F;usr&#x2F;share&#x2F;man&#x2F;man1&#x2F;chroot.1 $LFS&#x2F;usr&#x2F;share&#x2F;man&#x2F;man8&#x2F;chroot.8</span><br><span class="line">sed -i &#39;s&#x2F;&quot;1&quot;&#x2F;&quot;8&quot;&#x2F;&#39; $LFS&#x2F;usr&#x2F;share&#x2F;man&#x2F;man8&#x2F;chroot.8</span><br></pre></td></tr></table></figure>
+<h2 id="Diffutils-3-8"><a href="#Diffutils-3-8" class="headerlink" title="Diffutils-3.8"></a>Diffutils-3.8</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf diffutils-3.8.tar.xz</span><br><span class="line">cd diffutils-3.8</span><br></pre></td></tr></table></figure>
+<p>三连</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr --host&#x3D;$LFS_TGT</span><br><span class="line">make</span><br><span class="line">make DESTDIR&#x3D;$LFS install</span><br></pre></td></tr></table></figure>
+<h2 id="File-5-40"><a href="#File-5-40" class="headerlink" title="File-5.40"></a>File-5.40</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf file-5.40.tar.gz</span><br><span class="line">cd file-5.40</span><br></pre></td></tr></table></figure>
+<p>这里的<code>file</code>命令需要与宿主机上的版本一致，因此需要特殊编译</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">mkdir build</span><br><span class="line">pushd build</span><br><span class="line">..&#x2F;configure --disable-bzlib \</span><br><span class="line">--disable-libseccomp \</span><br><span class="line">--disable-xzlib \</span><br><span class="line">--disable-zlib</span><br><span class="line">make</span><br><span class="line">popd</span><br></pre></td></tr></table></figure>
+<p>再进行三连，同样不要进入<code>build</code></p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr --host&#x3D;$LFS_TGT --build&#x3D;$(.&#x2F;config.guess)</span><br><span class="line">make FILE_COMPILE&#x3D;$(pwd)&#x2F;build&#x2F;src&#x2F;file</span><br><span class="line">make DESTDIR&#x3D;$LFS install</span><br></pre></td></tr></table></figure>
+<h2 id="Findutils-4-8-0"><a href="#Findutils-4-8-0" class="headerlink" title="Findutils-4.8.0"></a>Findutils-4.8.0</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf findutils-4.8.0.tar.xz</span><br><span class="line">cd findutils-4.8.0</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr \</span><br><span class="line">--localstatedir&#x3D;&#x2F;var&#x2F;lib&#x2F;locate \</span><br><span class="line">--host&#x3D;$LFS_TGT \</span><br><span class="line">--build&#x3D;$(build-aux&#x2F;config.guess)</span><br></pre></td></tr></table></figure>
+<p>编译和安装</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make</span><br><span class="line">make DESTDIR&#x3D;$LFS install</span><br></pre></td></tr></table></figure>
+<h2 id="Gawk-5-1-0"><a href="#Gawk-5-1-0" class="headerlink" title="Gawk-5.1.0"></a>Gawk-5.1.0</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf gawk-5.1.0.tar.xz</span><br><span class="line">cd gawk-5.1.0</span><br></pre></td></tr></table></figure>
+<p>首先确保不安装不需要的文件</p>
+<pre><code>sed -i &#39;s/extras//&#39; Makefile.in</code></pre>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr \</span><br><span class="line">--host&#x3D;$LFS_TGT \</span><br><span class="line">--build&#x3D;$(.&#x2F;config.guess)</span><br></pre></td></tr></table></figure>
+<p>编译和安装</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make</span><br><span class="line">make DESTDIR&#x3D;$LFS install</span><br></pre></td></tr></table></figure>
+<h2 id="Grep-3-7"><a href="#Grep-3-7" class="headerlink" title="Grep-3.7"></a>Grep-3.7</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf grep-3.7.tar.xz</span><br><span class="line">cd grep-3.7</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr \</span><br><span class="line">--host&#x3D;$LFS_TGT</span><br></pre></td></tr></table></figure>
+<p>编译和安装</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make</span><br><span class="line">make DESTDIR&#x3D;$LFS install</span><br></pre></td></tr></table></figure>
+<h2 id="Gzip-1-10"><a href="#Gzip-1-10" class="headerlink" title="Gzip-1.10"></a>Gzip-1.10</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf gzip-1.10.tar.xz</span><br><span class="line">cd gzip-1.10</span><br><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr --host&#x3D;$LFS_TGT</span><br><span class="line">make</span><br><span class="line">make DESTDIR&#x3D;$LFS install</span><br></pre></td></tr></table></figure>
+<h2 id="Make-4-3"><a href="#Make-4-3" class="headerlink" title="Make-4.3"></a>Make-4.3</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf make-4.3.tar.gz</span><br><span class="line">cd make-4.3</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr \</span><br><span class="line">--without-guile \</span><br><span class="line">--host&#x3D;$LFS_TGT \</span><br><span class="line">--build&#x3D;$(build-aux&#x2F;config.guess)</span><br></pre></td></tr></table></figure>
+<p>编译和安装</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make</span><br><span class="line">make DESTDIR&#x3D;$LFS install</span><br></pre></td></tr></table></figure>
+<h2 id="Patch-2-7-6"><a href="#Patch-2-7-6" class="headerlink" title="Patch-2.7.6"></a>Patch-2.7.6</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf patch-2.7.6.tar.xz</span><br><span class="line">cd patch-2.7.6</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr \</span><br><span class="line">--host&#x3D;$LFS_TGT \</span><br><span class="line">--build&#x3D;$(build-aux&#x2F;config.guess)</span><br></pre></td></tr></table></figure>
+<p>编译和安装</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make</span><br><span class="line">make DESTDIR&#x3D;$LFS install</span><br></pre></td></tr></table></figure>
+<h2 id="Sed-4-8"><a href="#Sed-4-8" class="headerlink" title="Sed-4.8"></a>Sed-4.8</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf sed-4.8.tar.xz</span><br><span class="line">cd sed-4.8</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr \</span><br><span class="line">--host&#x3D;$LFS_TGT</span><br></pre></td></tr></table></figure>
+<p>编译和安装</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make</span><br><span class="line">make DESTDIR&#x3D;$LFS install</span><br></pre></td></tr></table></figure>
+<h2 id="Tar-1-34"><a href="#Tar-1-34" class="headerlink" title="Tar-1.34"></a>Tar-1.34</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf tar-1.34.tar.xz</span><br><span class="line">cd tar-1.34</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr \</span><br><span class="line">--host&#x3D;$LFS_TGT \</span><br><span class="line">--build&#x3D;$(build-aux&#x2F;config.guess)</span><br></pre></td></tr></table></figure>
+<p>编译和安装</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make</span><br><span class="line">make DESTDIR&#x3D;$LFS install</span><br></pre></td></tr></table></figure>
+<h2 id="Xz-5-2-5"><a href="#Xz-5-2-5" class="headerlink" title="Xz-5.2.5"></a>Xz-5.2.5</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf xz-5.2.5.tar.xz</span><br><span class="line">cd xz-5.2.5</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr \</span><br><span class="line">--host&#x3D;$LFS_TGT \</span><br><span class="line">--build&#x3D;$(build-aux&#x2F;config.guess) \</span><br><span class="line">--disable-static \</span><br><span class="line">--docdir&#x3D;&#x2F;usr&#x2F;share&#x2F;doc&#x2F;xz-5.2.5</span><br></pre></td></tr></table></figure>
+<p>编译和安装</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make</span><br><span class="line">make DESTDIR&#x3D;$LFS install</span><br></pre></td></tr></table></figure>
+<h2 id="Binutils-2-37-第二遍"><a href="#Binutils-2-37-第二遍" class="headerlink" title="Binutils-2.37 - 第二遍"></a>Binutils-2.37 - 第二遍</h2><p>这一次和第一次差不多，但有一些微妙的差别</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf binutils-2.37.tar.xz</span><br><span class="line">cp binutils-2.37-upstream_fix-1.patch binutils-2.37</span><br><span class="line">cd binutils-2.37</span><br><span class="line">patch -Np1 -i binutils-2.37-upstream_fix-1.patch</span><br><span class="line">mkdir build</span><br><span class="line">cd build</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">..&#x2F;configure \</span><br><span class="line">--prefix&#x3D;&#x2F;usr \</span><br><span class="line">--build&#x3D;$(..&#x2F;config.guess) \</span><br><span class="line">--host&#x3D;$LFS_TGT \</span><br><span class="line">--disable-nls \</span><br><span class="line">--enable-shared \</span><br><span class="line">--disable-werror \</span><br><span class="line">--enable-64-bit-bfd</span><br></pre></td></tr></table></figure>
+<p>编译</p>
+<pre><code>make</code></pre>
+<p>安装，并绕过导致<code>libctf.so</code>链接到宿主发行版 zlib 的问题</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make DESTDIR&#x3D;$LFS install -j1</span><br><span class="line">install -vm755 libctf&#x2F;.libs&#x2F;libctf.so.0.0.0 $LFS&#x2F;usr&#x2F;lib</span><br></pre></td></tr></table></figure>
+<h2 id="GCC-11-2-0-第二遍"><a href="#GCC-11-2-0-第二遍" class="headerlink" title="GCC-11.2.0 - 第二遍"></a>GCC-11.2.0 - 第二遍</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf gcc-11.2.0.tar.xz</span><br><span class="line">cd gcc-11.2.0</span><br></pre></td></tr></table></figure>
+<p>还是一样的解压 GMP, MPFR 和 MPC</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xf ..&#x2F;mpfr-4.1.0.tar.xz</span><br><span class="line">mv -v mpfr-4.1.0 mpfr</span><br><span class="line">tar -xf ..&#x2F;gmp-6.2.1.tar.xz</span><br><span class="line">mv -v gmp-6.2.1 gmp</span><br><span class="line">tar -xf ..&#x2F;mpc-1.2.1.tar.gz</span><br><span class="line">mv -v mpc-1.2.1 mpc</span><br></pre></td></tr></table></figure>
+<p>还是一样的设置 64 位库的符号链接</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">case $(uname -m) in</span><br><span class="line">x86_64)</span><br><span class="line">sed -e &#39;&#x2F;m64&#x3D;&#x2F;s&#x2F;lib64&#x2F;lib&#x2F;&#39; -i.orig gcc&#x2F;config&#x2F;i386&#x2F;t-linux64</span><br><span class="line">;;</span><br><span class="line">esac</span><br></pre></td></tr></table></figure>
+<p>建立<code>build</code>目录</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">mkdir build</span><br><span class="line">cd build</span><br></pre></td></tr></table></figure>
+<p>创建一个符号链接以在构建<code>libgcc</code>时启用对 posix 线程的支持</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">mkdir -pv $LFS_TGT&#x2F;libgcc</span><br><span class="line">ln -s ..&#x2F;..&#x2F;..&#x2F;libgcc&#x2F;gthr-posix.h $LFS_TGT&#x2F;libgcc&#x2F;gthr-default.h</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">..&#x2F;configure \</span><br><span class="line">--build&#x3D;$(..&#x2F;config.guess) \</span><br><span class="line">--host&#x3D;$LFS_TGT \</span><br><span class="line">--prefix&#x3D;&#x2F;usr \</span><br><span class="line">CC_FOR_TARGET&#x3D;$LFS_TGT-gcc \</span><br><span class="line">--with-build-sysroot&#x3D;$LFS \</span><br><span class="line">--enable-initfini-array \</span><br><span class="line">--disable-nls \</span><br><span class="line">--disable-multilib \</span><br><span class="line">--disable-decimal-float \</span><br><span class="line">--disable-libatomic \</span><br><span class="line">--disable-libgomp \</span><br><span class="line">--disable-libquadmath \</span><br><span class="line">--disable-libssp \</span><br><span class="line">--disable-libvtv \</span><br><span class="line">--disable-libstdcxx \</span><br><span class="line">--enable-languages&#x3D;c,c++</span><br></pre></td></tr></table></figure>
+<p>编译和安装</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make</span><br><span class="line">make DESTDIR&#x3D;$LFS install</span><br></pre></td></tr></table></figure>
+<p>一样的创建<code>cc</code>到<code>gcc</code>的符号链接</p>
+<pre><code>ln -sv gcc $LFS/usr/bin/cc</code></pre>
+<p>至此本文就到这里，接下来就要进行 chroot 了。</p>
+<blockquote>
+<p>11.0 的手册相较于 9.0 而言第二部分的内容实在是太多了……<br>不理解为什么要把 chroot 后的操作也要放在这一部分。</p>
+</blockquote>
+]]></content>
+      <categories>
+        <category>LFS</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>LFS</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>lfs搭建3 Chroot 以及构建额外工具</title>
+    <url>/2021/11/27/lfs%E6%90%AD%E5%BB%BA3/</url>
+    <content><![CDATA[<p>现在开始就要 chroot 了，同时现在开始用户也要从<code>lfs</code>到<code>root</code>。<br>不过这个顺序相比 9.0 差别太大了吧……<br>那么，现在就<code>su</code>吧。<br>记得设置<code>$LFS</code>:</p>
+<pre><code>export LFS=/mnt/lfs</code></pre>
+<h1 id="改变-LFS-系统目录的所有者"><a href="#改变-LFS-系统目录的所有者" class="headerlink" title="改变 LFS 系统目录的所有者"></a>改变 LFS 系统目录的所有者</h1><p>毕竟一个正常的系统其系统文件所有者不可能是<code>lfs</code></p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">chown -R root:root $LFS&#x2F;&#123;usr,lib,var,etc,bin,sbin,tools&#125;</span><br><span class="line">case $(uname -m) in</span><br><span class="line">x86_64) chown -R root:root $LFS&#x2F;lib64 ;;</span><br><span class="line">esac</span><br></pre></td></tr></table></figure>
+<h1 id="准备虚拟内核文件系统"><a href="#准备虚拟内核文件系统" class="headerlink" title="准备虚拟内核文件系统"></a>准备虚拟内核文件系统</h1><p>首先需要建立 dev,proc,sys,run 目录</p>
+<pre><code>mkdir -pv $LFS/&#123;dev,proc,sys,run&#125;</code></pre>
+<h2 id="创建初始设备节点"><a href="#创建初始设备节点" class="headerlink" title="创建初始设备节点"></a>创建初始设备节点</h2><p>主要是<code>null</code>和<code>console</code></p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">mknod -m 600 $LFS&#x2F;dev&#x2F;console c 5 1</span><br><span class="line">mknod -m 666 $LFS&#x2F;dev&#x2F;null c 1 3</span><br></pre></td></tr></table></figure>
+<h2 id="挂载-dev"><a href="#挂载-dev" class="headerlink" title="挂载 /dev"></a>挂载 /dev</h2><pre><code>mount -v --bind /dev $LFS/dev</code></pre>
+<h2 id="挂载虚拟内核文件系统"><a href="#挂载虚拟内核文件系统" class="headerlink" title="挂载虚拟内核文件系统"></a>挂载虚拟内核文件系统</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">mount -v --bind &#x2F;dev&#x2F;pts $LFS&#x2F;dev&#x2F;pts</span><br><span class="line">mount -vt proc proc $LFS&#x2F;proc</span><br><span class="line">mount -vt sysfs sysfs $LFS&#x2F;sys</span><br><span class="line">mount -vt tmpfs tmpfs $LFS&#x2F;run</span><br></pre></td></tr></table></figure>
+<p>此外，还要创建一些目录</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">if [ -h $LFS&#x2F;dev&#x2F;shm ]; then</span><br><span class="line">  mkdir -pv $LFS&#x2F;$(readlink $LFS&#x2F;dev&#x2F;shm)</span><br><span class="line">fi</span><br></pre></td></tr></table></figure>
+<h1 id="Chroot"><a href="#Chroot" class="headerlink" title="Chroot"></a>Chroot</h1><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">chroot &quot;$LFS&quot; &#x2F;usr&#x2F;bin&#x2F;env -i   \</span><br><span class="line">    HOME&#x3D;&#x2F;root                  \</span><br><span class="line">    TERM&#x3D;&quot;$TERM&quot;                \</span><br><span class="line">    PS1&#x3D;&#39;(lfs chroot) \u:\w\$ &#39; \</span><br><span class="line">    PATH&#x3D;&#x2F;usr&#x2F;bin:&#x2F;usr&#x2F;sbin \</span><br><span class="line">    &#x2F;bin&#x2F;bash --login +h</span><br></pre></td></tr></table></figure>
+<p>这时的 bash 会显示 I have no name，因为没有<code>/etc/passwd</code>，这时正常的，虽然有点丑 :D</p>
+<h2 id="退出时进入-Chroot-的操作"><a href="#退出时进入-Chroot-的操作" class="headerlink" title="退出时进入 Chroot 的操作"></a>退出时进入 Chroot 的操作</h2><p>如果只是退出而不关机/重启的话，直接运行上面的命令就行，不然就要重新挂载这些文件系统。<br>不过建议每次 chroot 前都检查一次。</p>
+<h1 id="创建目录"><a href="#创建目录" class="headerlink" title="创建目录"></a>创建目录</h1><p>现在再创建一些还需要的目录</p>
+<pre><code>mkdir -pv /&#123;boot,home,mnt,opt,srv&#125;</code></pre>
+<p>其实有一些目录已经创建了，但这里为了防止遗漏手册还是加上了这些目录。<br>现在创建子目录</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">mkdir -pv &#x2F;etc&#x2F;&#123;opt,sysconfig&#125;</span><br><span class="line">mkdir -pv &#x2F;lib&#x2F;firmware</span><br><span class="line">mkdir -pv &#x2F;media&#x2F;&#123;floppy,cdrom&#125;</span><br><span class="line">mkdir -pv &#x2F;usr&#x2F;&#123;,local&#x2F;&#125;&#123;include,src&#125;</span><br><span class="line">mkdir -pv &#x2F;usr&#x2F;local&#x2F;&#123;bin,lib,sbin&#125;</span><br><span class="line">mkdir -pv &#x2F;usr&#x2F;&#123;,local&#x2F;&#125;share&#x2F;&#123;color,dict,doc,info,locale,man&#125;</span><br><span class="line">mkdir -pv &#x2F;usr&#x2F;&#123;,local&#x2F;&#125;share&#x2F;&#123;misc,terminfo,zoneinfo&#125;</span><br><span class="line">mkdir -pv &#x2F;usr&#x2F;&#123;,local&#x2F;&#125;share&#x2F;man&#x2F;man&#123;1..8&#125;</span><br><span class="line">mkdir -pv &#x2F;var&#x2F;&#123;cache,local,log,mail,opt,spool&#125;</span><br><span class="line">mkdir -pv &#x2F;var&#x2F;lib&#x2F;&#123;color,misc,locate&#125;</span><br><span class="line">ln -sfv &#x2F;run &#x2F;var&#x2F;run</span><br><span class="line">ln -sfv &#x2F;run&#x2F;lock &#x2F;var&#x2F;lock</span><br><span class="line">install -dv -m 0750 &#x2F;root</span><br><span class="line">install -dv -m 1777 &#x2F;tmp &#x2F;var&#x2F;tmp</span><br></pre></td></tr></table></figure>
+<p>以上目录结构全部基于 FHS，但只加了必要的目录。</p>
+<h1 id="创建必要的文件和符号链接"><a href="#创建必要的文件和符号链接" class="headerlink" title="创建必要的文件和符号链接"></a>创建必要的文件和符号链接</h1><p>先加上从<code>/etc/mtab</code>到<code>/proc</code>的符号链接</p>
+<pre><code>ln -sv /proc/self/mounts /etc/mtab</code></pre>
+<p>然后是创建一个最简单的<code>/etc/hosts</code></p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cat &gt; &#x2F;etc&#x2F;hosts &lt;&lt; EOF</span><br><span class="line">127.0.0.1  localhost $(hostname)</span><br><span class="line">::1        localhost</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>其实这里的<code>$(hostname)</code>在其他发行版里是需要手动改的</p>
+</blockquote>
+<p>创建<code>/etc/passwd</code>：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cat &gt; &#x2F;etc&#x2F;passwd &lt;&lt; &quot;EOF&quot;</span><br><span class="line">root:x:0:0:root:&#x2F;root:&#x2F;bin&#x2F;bash</span><br><span class="line">bin:x:1:1:bin:&#x2F;dev&#x2F;null:&#x2F;bin&#x2F;false</span><br><span class="line">daemon:x:6:6:Daemon User:&#x2F;dev&#x2F;null:&#x2F;bin&#x2F;false</span><br><span class="line">messagebus:x:18:18:D-Bus Message Daemon User:&#x2F;run&#x2F;dbus:&#x2F;bin&#x2F;false</span><br><span class="line">systemd-bus-proxy:x:72:72:systemd Bus Proxy:&#x2F;:&#x2F;bin&#x2F;false</span><br><span class="line">systemd-journal-gateway:x:73:73:systemd Journal Gateway:&#x2F;:&#x2F;bin&#x2F;false</span><br><span class="line">systemd-journal-remote:x:74:74:systemd Journal Remote:&#x2F;:&#x2F;bin&#x2F;false</span><br><span class="line">systemd-journal-upload:x:75:75:systemd Journal Upload:&#x2F;:&#x2F;bin&#x2F;false</span><br><span class="line">systemd-network:x:76:76:systemd Network Management:&#x2F;:&#x2F;bin&#x2F;false</span><br><span class="line">systemd-resolve:x:77:77:systemd Resolver:&#x2F;:&#x2F;bin&#x2F;false</span><br><span class="line">systemd-timesync:x:78:78:systemd Time Synchronization:&#x2F;:&#x2F;bin&#x2F;false</span><br><span class="line">systemd-coredump:x:79:79:systemd Core Dumper:&#x2F;:&#x2F;bin&#x2F;false</span><br><span class="line">uuidd:x:80:80:UUID Generation Daemon User:&#x2F;dev&#x2F;null:&#x2F;bin&#x2F;false</span><br><span class="line">systemd-oom:x:81:81:systemd Out Of Memory Daemon:&#x2F;:&#x2F;bin&#x2F;false</span><br><span class="line">nobody:x:99:99:Unprivileged User:&#x2F;dev&#x2F;null:&#x2F;bin&#x2F;false</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+<p>可以看出这里加上了 systemd 需要的用户。<br>创建<code>/etc/group</code>：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cat &gt; &#x2F;etc&#x2F;group &lt;&lt; &quot;EOF&quot;</span><br><span class="line">root:x:0:</span><br><span class="line">bin:x:1:daemon</span><br><span class="line">sys:x:2:</span><br><span class="line">kmem:x:3:</span><br><span class="line">tape:x:4:</span><br><span class="line">tty:x:5:</span><br><span class="line">daemon:x:6:</span><br><span class="line">floppy:x:7:</span><br><span class="line">disk:x:8:</span><br><span class="line">lp:x:9:</span><br><span class="line">dialout:x:10:</span><br><span class="line">audio:x:11:</span><br><span class="line">video:x:12:</span><br><span class="line">utmp:x:13:</span><br><span class="line">usb:x:14:</span><br><span class="line">cdrom:x:15:</span><br><span class="line">adm:x:16:</span><br><span class="line">messagebus:x:18:</span><br><span class="line">systemd-journal:x:23:</span><br><span class="line">input:x:24:</span><br><span class="line">mail:x:34:</span><br><span class="line">kvm:x:61:</span><br><span class="line">systemd-bus-proxy:x:72:</span><br><span class="line">systemd-journal-gateway:x:73:</span><br><span class="line">systemd-journal-remote:x:74:</span><br><span class="line">systemd-journal-upload:x:75:</span><br><span class="line">systemd-network:x:76:</span><br><span class="line">systemd-resolve:x:77:</span><br><span class="line">systemd-timesync:x:78:</span><br><span class="line">systemd-coredump:x:79:</span><br><span class="line">uuidd:x:80:</span><br><span class="line">systemd-oom:x:81:81:</span><br><span class="line">wheel:x:97:</span><br><span class="line">nogroup:x:99:</span><br><span class="line">users:x:999:</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+<p>这里用户组的标准可以看作 LFS 自己的标准了，其中用户组可以根据需要自行修改。<br>现在需要创建一个之后的测试中需要用到的用户，不过是临时的，最后会删除。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">echo &quot;tester:x:101:101::&#x2F;home&#x2F;tester:&#x2F;bin&#x2F;bash&quot; &gt;&gt; &#x2F;etc&#x2F;passwd</span><br><span class="line">echo &quot;tester:x:101:&quot; &gt;&gt; &#x2F;etc&#x2F;group</span><br><span class="line">install -o tester -d &#x2F;home&#x2F;tester</span><br></pre></td></tr></table></figure>
+<p>现在，赋予 bash 以名字（无故中二 XD）：</p>
+<pre><code>exec /bin/bash --login +h</code></pre>
+<p>还要创建一些日志文件，虽然都是空的：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">touch &#x2F;var&#x2F;log&#x2F;&#123;btmp,lastlog,faillog,wtmp&#125;</span><br><span class="line">chgrp -v utmp &#x2F;var&#x2F;log&#x2F;lastlog</span><br><span class="line">chmod -v 664  &#x2F;var&#x2F;log&#x2F;lastlog</span><br><span class="line">chmod -v 600  &#x2F;var&#x2F;log&#x2F;btmp</span><br></pre></td></tr></table></figure>
+<p>至此，初步配置完成，现在该安装额外工具了。</p>
+<h1 id="构建额外工具"><a href="#构建额外工具" class="headerlink" title="构建额外工具"></a>构建额外工具</h1><p>你没理解错，以下部分全部都以<code>root</code>用户编译。</p>
+<h2 id="GCC-11-2-0-中的-Libstdc-第二遍"><a href="#GCC-11-2-0-中的-Libstdc-第二遍" class="headerlink" title="GCC-11.2.0 中的 Libstdc++ - 第二遍"></a>GCC-11.2.0 中的 Libstdc++ - 第二遍</h2><p>在前面第二遍编译 gcc 时，并没有编译它，因为它不能用宿主机工具链编译。    </p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf gcc-11.2.0.tar.xz</span><br><span class="line">cd gcc-11.2.0</span><br></pre></td></tr></table></figure>
+<p>创建一个符号链接</p>
+<pre><code>ln -s gthr-posix.h libgcc/gthr-default.h</code></pre>
+<p>建立<code>build</code>目录</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">mkdir build</span><br><span class="line">cd build</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">..&#x2F;libstdc++-v3&#x2F;configure \</span><br><span class="line">CXXFLAGS&#x3D;&quot;-g -O2 -D_GNU_SOURCE&quot; \</span><br><span class="line">--prefix&#x3D;&#x2F;usr \</span><br><span class="line">--disable-multilib \</span><br><span class="line">--disable-nls \</span><br><span class="line">--host&#x3D;$(uname -m)-lfs-linux-gnu \</span><br><span class="line">--disable-libstdcxx-pch</span><br></pre></td></tr></table></figure>
+<p>编译和安装</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<h2 id="Gettext-0-21"><a href="#Gettext-0-21" class="headerlink" title="Gettext-0.21"></a>Gettext-0.21</h2><p>这里只安装<code>msgfmt</code>，<code>msgmerge</code>，以及<code>xgettext</code>这三个程序</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf gettext-0.21.tar.xz</span><br><span class="line">cd gettext-0.21</span><br><span class="line">.&#x2F;configure --disable-shared</span><br><span class="line">make</span><br><span class="line">cp -v gettext-tools&#x2F;src&#x2F;&#123;msgfmt,msgmerge,xgettext&#125; &#x2F;usr&#x2F;bin</span><br></pre></td></tr></table></figure>
+<h2 id="Bison-3-7-6"><a href="#Bison-3-7-6" class="headerlink" title="Bison-3.7.6"></a>Bison-3.7.6</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf bison-3.7.6.tar.xz</span><br><span class="line">cd bison-3.7.6</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr \</span><br><span class="line">--docdir&#x3D;&#x2F;usr&#x2F;share&#x2F;doc&#x2F;bison-3.7.6</span><br></pre></td></tr></table></figure>
+<p>编译和安装</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<h2 id="Perl-5-34-0"><a href="#Perl-5-34-0" class="headerlink" title="Perl-5.34.0"></a>Perl-5.34.0</h2><p>此处要加一个 patch</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf perl-5.34.0.tar.xz</span><br><span class="line">cp perl-5.34.0-upstream_fixes-1.patch perl-5.34.0&#x2F;</span><br><span class="line">cd perl-5.34.0</span><br><span class="line">patch -Np1 -i perl-5.34.0-upstream_fixes-1.patch</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sh Configure -des \</span><br><span class="line">-Dprefix&#x3D;&#x2F;usr \</span><br><span class="line">-Dvendorprefix&#x3D;&#x2F;usr \</span><br><span class="line">-Dprivlib&#x3D;&#x2F;usr&#x2F;lib&#x2F;perl5&#x2F;5.34&#x2F;core_perl \</span><br><span class="line">-Darchlib&#x3D;&#x2F;usr&#x2F;lib&#x2F;perl5&#x2F;5.34&#x2F;core_perl \</span><br><span class="line">-Dsitelib&#x3D;&#x2F;usr&#x2F;lib&#x2F;perl5&#x2F;5.34&#x2F;site_perl \</span><br><span class="line">-Dsitearch&#x3D;&#x2F;usr&#x2F;lib&#x2F;perl5&#x2F;5.34&#x2F;site_perl \</span><br><span class="line">-Dvendorlib&#x3D;&#x2F;usr&#x2F;lib&#x2F;perl5&#x2F;5.34&#x2F;vendor_perl \</span><br><span class="line">-Dvendorarch&#x3D;&#x2F;usr&#x2F;lib&#x2F;perl5&#x2F;5.34&#x2F;vendor_perl</span><br></pre></td></tr></table></figure>
+<p>编译和安装</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<h2 id="Python-3-9-6"><a href="#Python-3-9-6" class="headerlink" title="Python-3.9.6"></a>Python-3.9.6</h2><p>这里有两个 python 包，<code>Python-3.9.6.tar.xz</code>和<code>python-3.9.6-docs-html.tar.bz2</code>。<br>解压前面那个，后面的那个包因为没安装<code>bzip2</code>无法解压。<br>注意区分大小写。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf Python-3.9.6.tar.xz</span><br><span class="line">cd Python-3.9.6</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr \</span><br><span class="line">--enable-shared \</span><br><span class="line">--without-ensurepip</span><br></pre></td></tr></table></figure>
+<p>编译和安装</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<p>这里有部分模块是无法编译的，但 make 还是会报错（还是 fatal error），这里只要最外面的 make 执行成功即可。</p>
+<h2 id="Texinfo-6-8"><a href="#Texinfo-6-8" class="headerlink" title="Texinfo-6.8"></a>Texinfo-6.8</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf texinfo-6.8.tar.xz</span><br><span class="line">cd texinfo-6.8</span><br></pre></td></tr></table></figure>
+<p>在编译之前，需要修复在使用 Glibc-2.34 或更新版本时编译会出现的问题</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sed -e &#39;s&#x2F;__attribute_nonnull__&#x2F;__nonnull&#x2F;&#39; \</span><br><span class="line">    -i gnulib&#x2F;lib&#x2F;malloc&#x2F;dynarray-skeleton.c</span><br></pre></td></tr></table></figure>
+<p>之后</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr</span><br><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<h2 id="Util-linux-2-37-2"><a href="#Util-linux-2-37-2" class="headerlink" title="Util-linux-2.37.2"></a>Util-linux-2.37.2</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf util-linux-2.37.2.tar.xz</span><br><span class="line">cd util-linux-2.37.2</span><br></pre></td></tr></table></figure>
+<p>根据 FHS 的建议，使用<code>/var/lib/hwclock</code>：</p>
+<pre><code>mkdir -pv /var/lib/hwclock</code></pre>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.&#x2F;configure ADJTIME_PATH&#x3D;&#x2F;var&#x2F;lib&#x2F;hwclock&#x2F;adjtime \</span><br><span class="line">--libdir&#x3D;&#x2F;usr&#x2F;lib \</span><br><span class="line">--docdir&#x3D;&#x2F;usr&#x2F;share&#x2F;doc&#x2F;util-linux-2.37.2 \</span><br><span class="line">--disable-chfn-chsh \</span><br><span class="line">--disable-login \</span><br><span class="line">--disable-nologin \</span><br><span class="line">--disable-su \</span><br><span class="line">--disable-setpriv \</span><br><span class="line">--disable-runuser \</span><br><span class="line">--disable-pylibmount \</span><br><span class="line">--disable-static \</span><br><span class="line">--without-python \</span><br><span class="line">runstatedir&#x3D;&#x2F;run</span><br></pre></td></tr></table></figure>
+<p>编译和安装</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<p>至此，额外的工具就构建完成了。</p>
+<h1 id="清理"><a href="#清理" class="headerlink" title="清理"></a>清理</h1><p>首先清理文档</p>
+<pre><code>rm -rf /usr/share/&#123;info,man,doc&#125;/*</code></pre>
+<p>之后是<code>libtool</code>的<code>*.la</code>文件</p>
+<pre><code>find /usr/&#123;lib,libexec&#125; -name \*.la -delete</code></pre>
+<p>最后删除<code>/tools</code>，现在已经不需要了</p>
+<pre><code>rm -rf /tools</code></pre>
+<h1 id="备份"><a href="#备份" class="headerlink" title="备份"></a>备份</h1><p>这是可选的，但小心一点总没错。<br>以下操作在 chroot 外进行，且使用<code>root</code>用户。    </p>
+<pre><code>exit</code></pre>
+<p>备份需要至少 1G 空间。<br>先解除内核虚拟文件系统的挂载：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">umount $LFS&#x2F;dev&#123;&#x2F;pts,&#125;</span><br><span class="line">umount $LFS&#x2F;&#123;sys,proc,run&#125;</span><br></pre></td></tr></table></figure>
+<p>按照手册默认路径，备份于<code>/root</code></p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cd $LFS </span><br><span class="line">tar -cJpf $HOME&#x2F;lfs-temp-tools-11.0-systemd.tar.xz .</span><br></pre></td></tr></table></figure>
+<h1 id="还原"><a href="#还原" class="headerlink" title="还原"></a>还原</h1><p>需要还原时，运行</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cd $LFS</span><br><span class="line">rm -rf .&#x2F;*</span><br><span class="line">tar -xpf $HOME&#x2F;lfs-temp-tools-11.0-systemd.tar.xz</span><br></pre></td></tr></table></figure>
+<p><strong>运行前务必检查<code>$LFS</code>是否正确设置！</strong></p>
+<blockquote>
+<p>不然你宿主系统就 gg 了，<code>rm -rf /*</code>了解一下。</p>
+</blockquote>
+<p>至此，构建临时系统部分结束。</p>
+]]></content>
+      <categories>
+        <category>LFS</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>LFS</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>从零开始搭建 Home Lab 0 硬件的选择与架构方案的确定</title>
     <url>/2021/03/28/%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E6%90%AD%E5%BB%BAhomelab0/</url>
     <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>搭建 Home Lab 的想法，起源于我有一次运行虚拟机的时候。<br>虽然我现在的主力笔记本性能不差，16G 内存 + 256G SSD，但众所周知 Chrome 是著名的性能消耗大户，导致我的内存有一半被它吞了；而且由于笔记本上安装的重型软件和游戏实在太多了，尤其是游戏，占了 60G+ 的空间，导致剩余硬盘空间捉襟见肘。因此每一次使用虚拟机时，都要扣扣索索的盘算着分配的内存和虚拟磁盘的容量。更令人恼火的是，每次创建虚拟机，都要删掉一个游戏或者是占用了大量磁盘空间的软件，而且每次跑虚拟机只是测试一下而已，没过多久就要删，而删去虚拟机的时候再去下载这些程序是十分痛苦的事情。因此我便产生了专门买服务器跑虚拟机的想法。<br>而搭建 Home Lab 的另外一个原因，是因为折腾。<br>曾经我一直在一台 10 年前购入的 Lenovo 笔记本上跑 Gentoo，但由于<strong>各 种 各 样</strong>的原因，Gentoo 一直没安装成功，这称为了我心中的一根刺；而且我手头缺少一台 Linux 开发机，虽然 WSL 已经能满足大部分需求，但有些东西是 WSL 做不到的。而搭建一台 Home Lab，能做到All in One，开发机什么的将不再是问题。      </p>

@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta><title>lfs搭建3 Chroot 以及构建额外工具 - WilliamGong的博客</title><link rel="manifest" href="/manifest.json"><meta name="application-name" content="WilliamGong的博客"><meta name="msapplication-TileImage" content="/images/favicon.ico"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="WilliamGong的博客"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta description="现在开始就要 chroot 了，同时现在开始用户也要从lfs到root。 不过这个顺序相比 9.0 差别太大了吧…… 那么，现在就su吧。 记得设置$LFS:  export LFS&amp;#x3D;&amp;#x2F;mnt&amp;#x2F;lfs  改变 LFS 系统目录的所有者 毕竟一个正常的系统其系统文件所有者不可能是lfs  1 2 3 4   chown -R root:root $LFS&amp;#x2F;{usr,lib,var,etc,bin,s"><meta property="og:type" content="article"><meta property="og:title" content="lfs搭建3 Chroot 以及构建额外工具"><meta property="og:url" content="https://williamgong.github.io/2021/11/27/lfs%E6%90%AD%E5%BB%BA3/"><meta property="og:site_name" content="WilliamGong的博客"><meta property="og:description" content="现在开始就要 chroot 了，同时现在开始用户也要从lfs到root。 不过这个顺序相比 9.0 差别太大了吧…… 那么，现在就su吧。 记得设置$LFS:  export LFS&amp;#x3D;&amp;#x2F;mnt&amp;#x2F;lfs  改变 LFS 系统目录的所有者 毕竟一个正常的系统其系统文件所有者不可能是lfs  1 2 3 4   chown -R root:root $LFS&amp;#x2F;{usr,lib,var,etc,bin,s"><meta property="og:locale" content="zh_CN"><meta property="og:image" content="https://williamgong.github.io/img/og_image.png"><meta property="article:published_time" content="2021-11-27T23:15:48.000Z"><meta property="article:modified_time" content="2021-11-28T08:42:18.322Z"><meta property="article:author" content="William Gong"><meta property="article:tag" content="Linux"><meta property="article:tag" content="LFS"><meta property="twitter:card" content="summary"><meta property="twitter:image" content="/img/og_image.png"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://williamgong.github.io/2021/11/27/lfs%E6%90%AD%E5%BB%BA3/"},"headline":"WilliamGong的博客","image":["https://williamgong.github.io/img/og_image.png"],"datePublished":"2021-11-27T23:15:48.000Z","dateModified":"2021-11-28T08:42:18.322Z","author":{"@type":"Person","name":"William Gong"},"description":"现在开始就要 chroot 了，同时现在开始用户也要从lfs到root。 不过这个顺序相比 9.0 差别太大了吧…… 那么，现在就su吧。 记得设置$LFS:  export LFS&#x3D;&#x2F;mnt&#x2F;lfs  改变 LFS 系统目录的所有者 毕竟一个正常的系统其系统文件所有者不可能是lfs  1 2 3 4   chown -R root:root $LFS&#x2F;{usr,lib,var,etc,bin,s"}</script><link rel="canonical" href="https://williamgong.github.io/2021/11/27/lfs%E6%90%AD%E5%BB%BA3/"><link rel="alternate" href="/atom.xml" title="WilliamGong的博客" type="application/atom+xml"><link rel="icon" href="/images/favicon.ico"><link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/5.13.1/css/all.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/atom-one-light.css"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;600&amp;family=Source+Code+Pro"><link rel="stylesheet" href="/css/default.css"><style>body>.footer,body>.navbar,body>.section{opacity:0}</style><!--!--><script>var _hmt = _hmt || [];
+        (function() {
+            var hm = document.createElement("script");
+            hm.src = "//hm.baidu.com/hm.js?2bbd01e65b22abbc1be85e9d4383034b";
+            var s = document.getElementsByTagName("script")[0];
+            s.parentNode.insertBefore(hm, s);
+        })();</script><meta name="msvalidate.01" content="30D1F37102A54580CBBD8B39C14D54A2"><script src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" defer></script><!--!--><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css"><!--!--><!--!--><!--!--><script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script><!--!--><!--!--><meta name="generator" content="Hexo 5.2.0"><style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"] > svg a {
+  fill: blue;
+  stroke: blue;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head><body class="is-2-column"><nav class="navbar navbar-main"><div class="container"><div class="navbar-brand justify-content-center"><a class="navbar-item navbar-logo" href="/">WilliamGong</a></div><div class="navbar-menu"><div class="navbar-start"><a class="navbar-item" href="/">Home</a><a class="navbar-item" href="/archives">Archives</a><a class="navbar-item" href="/categories">Categories</a><a class="navbar-item" href="/tags">Tags</a><a class="navbar-item" href="/about">About</a></div><div class="navbar-end"><a class="navbar-item" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/WilliamGong/hexo-blog"><i class="fab fa-github"></i></a><a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;"><i class="fas fa-list-ul"></i></a><a class="navbar-item search" title="搜索" href="javascript:;"><i class="fas fa-search"></i></a></div></div></div></nav><section class="section"><div class="container"><div class="columns"><div class="column order-2 column-main is-8-tablet is-8-desktop is-8-widescreen"><div class="card"><article class="card-content article" role="article"><div class="article-meta is-size-7 is-uppercase level is-mobile"><div class="level-left"><span class="level-item"><time dateTime="2021-11-27T23:15:48.000Z" title="2021-11-27T23:15:48.000Z">2021-11-28</time>发表</span><span class="level-item"><time dateTime="2021-11-28T08:42:18.322Z" title="2021-11-28T08:42:18.322Z">2021-11-28</time>更新</span><span class="level-item"><a class="link-muted" href="/categories/LFS/">LFS</a></span><span class="level-item">12 分钟读完 (大约1785个字)</span><span class="level-item" id="busuanzi_container_page_pv"><span id="busuanzi_value_page_pv">0</span>次访问</span></div></div><h1 class="title is-3 is-size-4-mobile">lfs搭建3 Chroot 以及构建额外工具</h1><div class="content"><p>现在开始就要 chroot 了，同时现在开始用户也要从<code>lfs</code>到<code>root</code>。<br>不过这个顺序相比 9.0 差别太大了吧……<br>那么，现在就<code>su</code>吧。<br>记得设置<code>$LFS</code>:</p>
+<pre><code>export LFS=/mnt/lfs</code></pre>
+<h1 id="改变-LFS-系统目录的所有者"><a href="#改变-LFS-系统目录的所有者" class="headerlink" title="改变 LFS 系统目录的所有者"></a>改变 LFS 系统目录的所有者</h1><p>毕竟一个正常的系统其系统文件所有者不可能是<code>lfs</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">chown -R root:root $LFS&#x2F;&#123;usr,lib,var,etc,bin,sbin,tools&#125;</span><br><span class="line">case $(uname -m) in</span><br><span class="line">x86_64) chown -R root:root $LFS&#x2F;lib64 ;;</span><br><span class="line">esac</span><br></pre></td></tr></table></figure>
+<h1 id="准备虚拟内核文件系统"><a href="#准备虚拟内核文件系统" class="headerlink" title="准备虚拟内核文件系统"></a>准备虚拟内核文件系统</h1><p>首先需要建立 dev,proc,sys,run 目录</p>
+<pre><code>mkdir -pv $LFS/&#123;dev,proc,sys,run&#125;</code></pre>
+<h2 id="创建初始设备节点"><a href="#创建初始设备节点" class="headerlink" title="创建初始设备节点"></a>创建初始设备节点</h2><p>主要是<code>null</code>和<code>console</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mknod -m 600 $LFS&#x2F;dev&#x2F;console c 5 1</span><br><span class="line">mknod -m 666 $LFS&#x2F;dev&#x2F;null c 1 3</span><br></pre></td></tr></table></figure>
+<h2 id="挂载-dev"><a href="#挂载-dev" class="headerlink" title="挂载 /dev"></a>挂载 /dev</h2><pre><code>mount -v --bind /dev $LFS/dev</code></pre>
+<h2 id="挂载虚拟内核文件系统"><a href="#挂载虚拟内核文件系统" class="headerlink" title="挂载虚拟内核文件系统"></a>挂载虚拟内核文件系统</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">mount -v --bind &#x2F;dev&#x2F;pts $LFS&#x2F;dev&#x2F;pts</span><br><span class="line">mount -vt proc proc $LFS&#x2F;proc</span><br><span class="line">mount -vt sysfs sysfs $LFS&#x2F;sys</span><br><span class="line">mount -vt tmpfs tmpfs $LFS&#x2F;run</span><br></pre></td></tr></table></figure>
+<p>此外，还要创建一些目录</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">if [ -h $LFS&#x2F;dev&#x2F;shm ]; then</span><br><span class="line">  mkdir -pv $LFS&#x2F;$(readlink $LFS&#x2F;dev&#x2F;shm)</span><br><span class="line">fi</span><br></pre></td></tr></table></figure>
+<h1 id="Chroot"><a href="#Chroot" class="headerlink" title="Chroot"></a>Chroot</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">chroot &quot;$LFS&quot; &#x2F;usr&#x2F;bin&#x2F;env -i   \</span><br><span class="line">    HOME&#x3D;&#x2F;root                  \</span><br><span class="line">    TERM&#x3D;&quot;$TERM&quot;                \</span><br><span class="line">    PS1&#x3D;&#39;(lfs chroot) \u:\w\$ &#39; \</span><br><span class="line">    PATH&#x3D;&#x2F;usr&#x2F;bin:&#x2F;usr&#x2F;sbin \</span><br><span class="line">    &#x2F;bin&#x2F;bash --login +h</span><br></pre></td></tr></table></figure>
+<p>这时的 bash 会显示 I have no name，因为没有<code>/etc/passwd</code>，这时正常的，虽然有点丑 :D</p>
+<h2 id="退出时进入-Chroot-的操作"><a href="#退出时进入-Chroot-的操作" class="headerlink" title="退出时进入 Chroot 的操作"></a>退出时进入 Chroot 的操作</h2><p>如果只是退出而不关机/重启的话，直接运行上面的命令就行，不然就要重新挂载这些文件系统。<br>不过建议每次 chroot 前都检查一次。</p>
+<h1 id="创建目录"><a href="#创建目录" class="headerlink" title="创建目录"></a>创建目录</h1><p>现在再创建一些还需要的目录</p>
+<pre><code>mkdir -pv /&#123;boot,home,mnt,opt,srv&#125;</code></pre>
+<p>其实有一些目录已经创建了，但这里为了防止遗漏手册还是加上了这些目录。<br>现在创建子目录</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">mkdir -pv &#x2F;etc&#x2F;&#123;opt,sysconfig&#125;</span><br><span class="line">mkdir -pv &#x2F;lib&#x2F;firmware</span><br><span class="line">mkdir -pv &#x2F;media&#x2F;&#123;floppy,cdrom&#125;</span><br><span class="line">mkdir -pv &#x2F;usr&#x2F;&#123;,local&#x2F;&#125;&#123;include,src&#125;</span><br><span class="line">mkdir -pv &#x2F;usr&#x2F;local&#x2F;&#123;bin,lib,sbin&#125;</span><br><span class="line">mkdir -pv &#x2F;usr&#x2F;&#123;,local&#x2F;&#125;share&#x2F;&#123;color,dict,doc,info,locale,man&#125;</span><br><span class="line">mkdir -pv &#x2F;usr&#x2F;&#123;,local&#x2F;&#125;share&#x2F;&#123;misc,terminfo,zoneinfo&#125;</span><br><span class="line">mkdir -pv &#x2F;usr&#x2F;&#123;,local&#x2F;&#125;share&#x2F;man&#x2F;man&#123;1..8&#125;</span><br><span class="line">mkdir -pv &#x2F;var&#x2F;&#123;cache,local,log,mail,opt,spool&#125;</span><br><span class="line">mkdir -pv &#x2F;var&#x2F;lib&#x2F;&#123;color,misc,locate&#125;</span><br><span class="line">ln -sfv &#x2F;run &#x2F;var&#x2F;run</span><br><span class="line">ln -sfv &#x2F;run&#x2F;lock &#x2F;var&#x2F;lock</span><br><span class="line">install -dv -m 0750 &#x2F;root</span><br><span class="line">install -dv -m 1777 &#x2F;tmp &#x2F;var&#x2F;tmp</span><br></pre></td></tr></table></figure>
+<p>以上目录结构全部基于 FHS，但只加了必要的目录。</p>
+<h1 id="创建必要的文件和符号链接"><a href="#创建必要的文件和符号链接" class="headerlink" title="创建必要的文件和符号链接"></a>创建必要的文件和符号链接</h1><p>先加上从<code>/etc/mtab</code>到<code>/proc</code>的符号链接</p>
+<pre><code>ln -sv /proc/self/mounts /etc/mtab</code></pre>
+<p>然后是创建一个最简单的<code>/etc/hosts</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">cat &gt; &#x2F;etc&#x2F;hosts &lt;&lt; EOF</span><br><span class="line">127.0.0.1  localhost $(hostname)</span><br><span class="line">::1        localhost</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>其实这里的<code>$(hostname)</code>在其他发行版里是需要手动改的</p>
+</blockquote>
+<p>创建<code>/etc/passwd</code>：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">cat &gt; &#x2F;etc&#x2F;passwd &lt;&lt; &quot;EOF&quot;</span><br><span class="line">root:x:0:0:root:&#x2F;root:&#x2F;bin&#x2F;bash</span><br><span class="line">bin:x:1:1:bin:&#x2F;dev&#x2F;null:&#x2F;bin&#x2F;false</span><br><span class="line">daemon:x:6:6:Daemon User:&#x2F;dev&#x2F;null:&#x2F;bin&#x2F;false</span><br><span class="line">messagebus:x:18:18:D-Bus Message Daemon User:&#x2F;run&#x2F;dbus:&#x2F;bin&#x2F;false</span><br><span class="line">systemd-bus-proxy:x:72:72:systemd Bus Proxy:&#x2F;:&#x2F;bin&#x2F;false</span><br><span class="line">systemd-journal-gateway:x:73:73:systemd Journal Gateway:&#x2F;:&#x2F;bin&#x2F;false</span><br><span class="line">systemd-journal-remote:x:74:74:systemd Journal Remote:&#x2F;:&#x2F;bin&#x2F;false</span><br><span class="line">systemd-journal-upload:x:75:75:systemd Journal Upload:&#x2F;:&#x2F;bin&#x2F;false</span><br><span class="line">systemd-network:x:76:76:systemd Network Management:&#x2F;:&#x2F;bin&#x2F;false</span><br><span class="line">systemd-resolve:x:77:77:systemd Resolver:&#x2F;:&#x2F;bin&#x2F;false</span><br><span class="line">systemd-timesync:x:78:78:systemd Time Synchronization:&#x2F;:&#x2F;bin&#x2F;false</span><br><span class="line">systemd-coredump:x:79:79:systemd Core Dumper:&#x2F;:&#x2F;bin&#x2F;false</span><br><span class="line">uuidd:x:80:80:UUID Generation Daemon User:&#x2F;dev&#x2F;null:&#x2F;bin&#x2F;false</span><br><span class="line">systemd-oom:x:81:81:systemd Out Of Memory Daemon:&#x2F;:&#x2F;bin&#x2F;false</span><br><span class="line">nobody:x:99:99:Unprivileged User:&#x2F;dev&#x2F;null:&#x2F;bin&#x2F;false</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+<p>可以看出这里加上了 systemd 需要的用户。<br>创建<code>/etc/group</code>：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">cat &gt; &#x2F;etc&#x2F;group &lt;&lt; &quot;EOF&quot;</span><br><span class="line">root:x:0:</span><br><span class="line">bin:x:1:daemon</span><br><span class="line">sys:x:2:</span><br><span class="line">kmem:x:3:</span><br><span class="line">tape:x:4:</span><br><span class="line">tty:x:5:</span><br><span class="line">daemon:x:6:</span><br><span class="line">floppy:x:7:</span><br><span class="line">disk:x:8:</span><br><span class="line">lp:x:9:</span><br><span class="line">dialout:x:10:</span><br><span class="line">audio:x:11:</span><br><span class="line">video:x:12:</span><br><span class="line">utmp:x:13:</span><br><span class="line">usb:x:14:</span><br><span class="line">cdrom:x:15:</span><br><span class="line">adm:x:16:</span><br><span class="line">messagebus:x:18:</span><br><span class="line">systemd-journal:x:23:</span><br><span class="line">input:x:24:</span><br><span class="line">mail:x:34:</span><br><span class="line">kvm:x:61:</span><br><span class="line">systemd-bus-proxy:x:72:</span><br><span class="line">systemd-journal-gateway:x:73:</span><br><span class="line">systemd-journal-remote:x:74:</span><br><span class="line">systemd-journal-upload:x:75:</span><br><span class="line">systemd-network:x:76:</span><br><span class="line">systemd-resolve:x:77:</span><br><span class="line">systemd-timesync:x:78:</span><br><span class="line">systemd-coredump:x:79:</span><br><span class="line">uuidd:x:80:</span><br><span class="line">systemd-oom:x:81:81:</span><br><span class="line">wheel:x:97:</span><br><span class="line">nogroup:x:99:</span><br><span class="line">users:x:999:</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+<p>这里用户组的标准可以看作 LFS 自己的标准了，其中用户组可以根据需要自行修改。<br>现在需要创建一个之后的测试中需要用到的用户，不过是临时的，最后会删除。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">echo &quot;tester:x:101:101::&#x2F;home&#x2F;tester:&#x2F;bin&#x2F;bash&quot; &gt;&gt; &#x2F;etc&#x2F;passwd</span><br><span class="line">echo &quot;tester:x:101:&quot; &gt;&gt; &#x2F;etc&#x2F;group</span><br><span class="line">install -o tester -d &#x2F;home&#x2F;tester</span><br></pre></td></tr></table></figure>
+<p>现在，赋予 bash 以名字（无故中二 XD）：</p>
+<pre><code>exec /bin/bash --login +h</code></pre>
+<p>还要创建一些日志文件，虽然都是空的：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">touch &#x2F;var&#x2F;log&#x2F;&#123;btmp,lastlog,faillog,wtmp&#125;</span><br><span class="line">chgrp -v utmp &#x2F;var&#x2F;log&#x2F;lastlog</span><br><span class="line">chmod -v 664  &#x2F;var&#x2F;log&#x2F;lastlog</span><br><span class="line">chmod -v 600  &#x2F;var&#x2F;log&#x2F;btmp</span><br></pre></td></tr></table></figure>
+<p>至此，初步配置完成，现在该安装额外工具了。</p>
+<h1 id="构建额外工具"><a href="#构建额外工具" class="headerlink" title="构建额外工具"></a>构建额外工具</h1><p>你没理解错，以下部分全部都以<code>root</code>用户编译。</p>
+<h2 id="GCC-11-2-0-中的-Libstdc-第二遍"><a href="#GCC-11-2-0-中的-Libstdc-第二遍" class="headerlink" title="GCC-11.2.0 中的 Libstdc++ - 第二遍"></a>GCC-11.2.0 中的 Libstdc++ - 第二遍</h2><p>在前面第二遍编译 gcc 时，并没有编译它，因为它不能用宿主机工具链编译。    </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf gcc-11.2.0.tar.xz</span><br><span class="line">cd gcc-11.2.0</span><br></pre></td></tr></table></figure>
+<p>创建一个符号链接</p>
+<pre><code>ln -s gthr-posix.h libgcc/gthr-default.h</code></pre>
+<p>建立<code>build</code>目录</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mkdir build</span><br><span class="line">cd build</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">..&#x2F;libstdc++-v3&#x2F;configure \</span><br><span class="line">CXXFLAGS&#x3D;&quot;-g -O2 -D_GNU_SOURCE&quot; \</span><br><span class="line">--prefix&#x3D;&#x2F;usr \</span><br><span class="line">--disable-multilib \</span><br><span class="line">--disable-nls \</span><br><span class="line">--host&#x3D;$(uname -m)-lfs-linux-gnu \</span><br><span class="line">--disable-libstdcxx-pch</span><br></pre></td></tr></table></figure>
+<p>编译和安装</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<h2 id="Gettext-0-21"><a href="#Gettext-0-21" class="headerlink" title="Gettext-0.21"></a>Gettext-0.21</h2><p>这里只安装<code>msgfmt</code>，<code>msgmerge</code>，以及<code>xgettext</code>这三个程序</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf gettext-0.21.tar.xz</span><br><span class="line">cd gettext-0.21</span><br><span class="line">.&#x2F;configure --disable-shared</span><br><span class="line">make</span><br><span class="line">cp -v gettext-tools&#x2F;src&#x2F;&#123;msgfmt,msgmerge,xgettext&#125; &#x2F;usr&#x2F;bin</span><br></pre></td></tr></table></figure>
+<h2 id="Bison-3-7-6"><a href="#Bison-3-7-6" class="headerlink" title="Bison-3.7.6"></a>Bison-3.7.6</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf bison-3.7.6.tar.xz</span><br><span class="line">cd bison-3.7.6</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr \</span><br><span class="line">--docdir&#x3D;&#x2F;usr&#x2F;share&#x2F;doc&#x2F;bison-3.7.6</span><br></pre></td></tr></table></figure>
+<p>编译和安装</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<h2 id="Perl-5-34-0"><a href="#Perl-5-34-0" class="headerlink" title="Perl-5.34.0"></a>Perl-5.34.0</h2><p>此处要加一个 patch</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf perl-5.34.0.tar.xz</span><br><span class="line">cp perl-5.34.0-upstream_fixes-1.patch perl-5.34.0&#x2F;</span><br><span class="line">cd perl-5.34.0</span><br><span class="line">patch -Np1 -i perl-5.34.0-upstream_fixes-1.patch</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">sh Configure -des \</span><br><span class="line">-Dprefix&#x3D;&#x2F;usr \</span><br><span class="line">-Dvendorprefix&#x3D;&#x2F;usr \</span><br><span class="line">-Dprivlib&#x3D;&#x2F;usr&#x2F;lib&#x2F;perl5&#x2F;5.34&#x2F;core_perl \</span><br><span class="line">-Darchlib&#x3D;&#x2F;usr&#x2F;lib&#x2F;perl5&#x2F;5.34&#x2F;core_perl \</span><br><span class="line">-Dsitelib&#x3D;&#x2F;usr&#x2F;lib&#x2F;perl5&#x2F;5.34&#x2F;site_perl \</span><br><span class="line">-Dsitearch&#x3D;&#x2F;usr&#x2F;lib&#x2F;perl5&#x2F;5.34&#x2F;site_perl \</span><br><span class="line">-Dvendorlib&#x3D;&#x2F;usr&#x2F;lib&#x2F;perl5&#x2F;5.34&#x2F;vendor_perl \</span><br><span class="line">-Dvendorarch&#x3D;&#x2F;usr&#x2F;lib&#x2F;perl5&#x2F;5.34&#x2F;vendor_perl</span><br></pre></td></tr></table></figure>
+<p>编译和安装</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<h2 id="Python-3-9-6"><a href="#Python-3-9-6" class="headerlink" title="Python-3.9.6"></a>Python-3.9.6</h2><p>这里有两个 python 包，<code>Python-3.9.6.tar.xz</code>和<code>python-3.9.6-docs-html.tar.bz2</code>。<br>解压前面那个，后面的那个包因为没安装<code>bzip2</code>无法解压。<br>注意区分大小写。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf Python-3.9.6.tar.xz</span><br><span class="line">cd Python-3.9.6</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr \</span><br><span class="line">--enable-shared \</span><br><span class="line">--without-ensurepip</span><br></pre></td></tr></table></figure>
+<p>编译和安装</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<p>这里有部分模块是无法编译的，但 make 还是会报错（还是 fatal error），这里只要最外面的 make 执行成功即可。</p>
+<h2 id="Texinfo-6-8"><a href="#Texinfo-6-8" class="headerlink" title="Texinfo-6.8"></a>Texinfo-6.8</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf texinfo-6.8.tar.xz</span><br><span class="line">cd texinfo-6.8</span><br></pre></td></tr></table></figure>
+<p>在编译之前，需要修复在使用 Glibc-2.34 或更新版本时编译会出现的问题</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sed -e &#39;s&#x2F;__attribute_nonnull__&#x2F;__nonnull&#x2F;&#39; \</span><br><span class="line">    -i gnulib&#x2F;lib&#x2F;malloc&#x2F;dynarray-skeleton.c</span><br></pre></td></tr></table></figure>
+<p>之后</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr</span><br><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<h2 id="Util-linux-2-37-2"><a href="#Util-linux-2-37-2" class="headerlink" title="Util-linux-2.37.2"></a>Util-linux-2.37.2</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf util-linux-2.37.2.tar.xz</span><br><span class="line">cd util-linux-2.37.2</span><br></pre></td></tr></table></figure>
+<p>根据 FHS 的建议，使用<code>/var/lib/hwclock</code>：</p>
+<pre><code>mkdir -pv /var/lib/hwclock</code></pre>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;configure ADJTIME_PATH&#x3D;&#x2F;var&#x2F;lib&#x2F;hwclock&#x2F;adjtime \</span><br><span class="line">--libdir&#x3D;&#x2F;usr&#x2F;lib \</span><br><span class="line">--docdir&#x3D;&#x2F;usr&#x2F;share&#x2F;doc&#x2F;util-linux-2.37.2 \</span><br><span class="line">--disable-chfn-chsh \</span><br><span class="line">--disable-login \</span><br><span class="line">--disable-nologin \</span><br><span class="line">--disable-su \</span><br><span class="line">--disable-setpriv \</span><br><span class="line">--disable-runuser \</span><br><span class="line">--disable-pylibmount \</span><br><span class="line">--disable-static \</span><br><span class="line">--without-python \</span><br><span class="line">runstatedir&#x3D;&#x2F;run</span><br></pre></td></tr></table></figure>
+<p>编译和安装</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<p>至此，额外的工具就构建完成了。</p>
+<h1 id="清理"><a href="#清理" class="headerlink" title="清理"></a>清理</h1><p>首先清理文档</p>
+<pre><code>rm -rf /usr/share/&#123;info,man,doc&#125;/*</code></pre>
+<p>之后是<code>libtool</code>的<code>*.la</code>文件</p>
+<pre><code>find /usr/&#123;lib,libexec&#125; -name \*.la -delete</code></pre>
+<p>最后删除<code>/tools</code>，现在已经不需要了</p>
+<pre><code>rm -rf /tools</code></pre>
+<h1 id="备份"><a href="#备份" class="headerlink" title="备份"></a>备份</h1><p>这是可选的，但小心一点总没错。<br>以下操作在 chroot 外进行，且使用<code>root</code>用户。    </p>
+<pre><code>exit</code></pre>
+<p>备份需要至少 1G 空间。<br>先解除内核虚拟文件系统的挂载：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">umount $LFS&#x2F;dev&#123;&#x2F;pts,&#125;</span><br><span class="line">umount $LFS&#x2F;&#123;sys,proc,run&#125;</span><br></pre></td></tr></table></figure>
+<p>按照手册默认路径，备份于<code>/root</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cd $LFS </span><br><span class="line">tar -cJpf $HOME&#x2F;lfs-temp-tools-11.0-systemd.tar.xz .</span><br></pre></td></tr></table></figure>
+<h1 id="还原"><a href="#还原" class="headerlink" title="还原"></a>还原</h1><p>需要还原时，运行</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">cd $LFS</span><br><span class="line">rm -rf .&#x2F;*</span><br><span class="line">tar -xpf $HOME&#x2F;lfs-temp-tools-11.0-systemd.tar.xz</span><br></pre></td></tr></table></figure>
+<p><strong>运行前务必检查<code>$LFS</code>是否正确设置！</strong></p>
+<blockquote>
+<p>不然你宿主系统就 gg 了，<code>rm -rf /*</code>了解一下。</p>
+</blockquote>
+<p>至此，构建临时系统部分结束。</p>
+</div><div class="article-licensing box"><div class="licensing-title"><p>lfs搭建3 Chroot 以及构建额外工具</p><p><a href="https://williamgong.github.io/2021/11/27/lfs%E6%90%AD%E5%BB%BA3/">https://williamgong.github.io/2021/11/27/lfs%E6%90%AD%E5%BB%BA3/</a></p></div><div class="licensing-meta level is-mobile"><div class="level-left"><div class="level-item is-narrow"><div><h6>作者</h6><p>William Gong</p></div></div><div class="level-item is-narrow"><div><h6>发布于</h6><p>2021-11-28</p></div></div><div class="level-item is-narrow"><div><h6>更新于</h6><p>2021-11-28</p></div></div><div class="level-item is-narrow"><div><h6>许可协议</h6><p><a class="icon" rel="noopener" target="_blank" title="Creative Commons" href="https://creativecommons.org/"><i class="fab fa-creative-commons"></i></a><a class="icon" rel="noopener" target="_blank" title="Attribution" href="https://creativecommons.org/licenses/by/4.0/"><i class="fab fa-creative-commons-by"></i></a><a class="icon" rel="noopener" target="_blank" title="Noncommercial" href="https://creativecommons.org/licenses/by-nc/4.0/"><i class="fab fa-creative-commons-nc"></i></a></p></div></div></div></div></div><div class="article-tags is-size-7 mb-4"><span class="mr-2">#</span><a class="link-muted mr-2" rel="tag" href="/tags/Linux/">Linux</a><a class="link-muted mr-2" rel="tag" href="/tags/LFS/">LFS</a></div><!--!--></article></div><!--!--><nav class="post-navigation mt-4 level is-mobile"><div class="level-end"><a class="article-nav-next level level-item link-muted" href="/2021/11/23/lfs%E6%90%AD%E5%BB%BA2/"><span class="level-item">LFS 搭建 2 构建临时系统</span><i class="level-item fas fa-chevron-right"></i></a></div></nav><!--!--></div><div class="column column-left is-4-tablet is-4-desktop is-4-widescreen  order-1 is-sticky"><div class="card widget" data-type="profile"><div class="card-content"><nav class="level"><div class="level-item has-text-centered flex-shrink-1"><div><figure class="image is-128x128 mx-auto mb-2"><img class="avatar" src="/images/avatar.png" alt="William Gong"></figure><p class="title is-size-4 is-block" style="line-height:inherit;">William Gong</p><p class="is-size-6 is-block">一条咸鱼</p><p class="is-size-6 is-flex justify-content-center"><i class="fas fa-map-marker-alt mr-1"></i><span>Guangzhou China</span></p></div></div></nav><nav class="level is-mobile"><div class="level-item has-text-centered is-marginless"><div><p class="heading">文章</p><a href="/archives"><p class="title">15</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">分类</p><a href="/categories"><p class="title">5</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">标签</p><a href="/tags"><p class="title">10</p></a></div></div></nav><div class="level"><a class="level-item button is-primary is-rounded" href="https://github.com/WilliamGong" target="_blank" rel="noopener">关注我</a></div><div class="level is-mobile"><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Github" href="https://github.com/WilliamGong"><i class="fab fa-github"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Zhihu" href="https://www.zhihu.com/people/gong-tai-lin"><i class="fab fa-zhihu"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="RSS" href="/atom.xml"><i class="fas fa-rss"></i></a></div></div></div><div class="card widget" id="toc" data-type="toc"><div class="card-content"><div class="menu"><h3 class="menu-label">目录</h3><ul class="menu-list"><li><a class="level is-mobile" href="#改变-LFS-系统目录的所有者"><span class="level-left"><span class="level-item">1</span><span class="level-item">改变 LFS 系统目录的所有者</span></span></a></li><li><a class="level is-mobile" href="#准备虚拟内核文件系统"><span class="level-left"><span class="level-item">2</span><span class="level-item">准备虚拟内核文件系统</span></span></a><ul class="menu-list"><li><a class="level is-mobile" href="#创建初始设备节点"><span class="level-left"><span class="level-item">2.1</span><span class="level-item">创建初始设备节点</span></span></a></li><li><a class="level is-mobile" href="#挂载-dev"><span class="level-left"><span class="level-item">2.2</span><span class="level-item">挂载 /dev</span></span></a></li><li><a class="level is-mobile" href="#挂载虚拟内核文件系统"><span class="level-left"><span class="level-item">2.3</span><span class="level-item">挂载虚拟内核文件系统</span></span></a></li></ul></li><li><a class="level is-mobile" href="#Chroot"><span class="level-left"><span class="level-item">3</span><span class="level-item">Chroot</span></span></a><ul class="menu-list"><li><a class="level is-mobile" href="#退出时进入-Chroot-的操作"><span class="level-left"><span class="level-item">3.1</span><span class="level-item">退出时进入 Chroot 的操作</span></span></a></li></ul></li><li><a class="level is-mobile" href="#创建目录"><span class="level-left"><span class="level-item">4</span><span class="level-item">创建目录</span></span></a></li><li><a class="level is-mobile" href="#创建必要的文件和符号链接"><span class="level-left"><span class="level-item">5</span><span class="level-item">创建必要的文件和符号链接</span></span></a></li><li><a class="level is-mobile" href="#构建额外工具"><span class="level-left"><span class="level-item">6</span><span class="level-item">构建额外工具</span></span></a><ul class="menu-list"><li><a class="level is-mobile" href="#GCC-11-2-0-中的-Libstdc-第二遍"><span class="level-left"><span class="level-item">6.1</span><span class="level-item">GCC-11.2.0 中的 Libstdc++ - 第二遍</span></span></a></li><li><a class="level is-mobile" href="#Gettext-0-21"><span class="level-left"><span class="level-item">6.2</span><span class="level-item">Gettext-0.21</span></span></a></li><li><a class="level is-mobile" href="#Bison-3-7-6"><span class="level-left"><span class="level-item">6.3</span><span class="level-item">Bison-3.7.6</span></span></a></li><li><a class="level is-mobile" href="#Perl-5-34-0"><span class="level-left"><span class="level-item">6.4</span><span class="level-item">Perl-5.34.0</span></span></a></li><li><a class="level is-mobile" href="#Python-3-9-6"><span class="level-left"><span class="level-item">6.5</span><span class="level-item">Python-3.9.6</span></span></a></li><li><a class="level is-mobile" href="#Texinfo-6-8"><span class="level-left"><span class="level-item">6.6</span><span class="level-item">Texinfo-6.8</span></span></a></li><li><a class="level is-mobile" href="#Util-linux-2-37-2"><span class="level-left"><span class="level-item">6.7</span><span class="level-item">Util-linux-2.37.2</span></span></a></li></ul></li><li><a class="level is-mobile" href="#清理"><span class="level-left"><span class="level-item">7</span><span class="level-item">清理</span></span></a></li><li><a class="level is-mobile" href="#备份"><span class="level-left"><span class="level-item">8</span><span class="level-item">备份</span></span></a></li><li><a class="level is-mobile" href="#还原"><span class="level-left"><span class="level-item">9</span><span class="level-item">还原</span></span></a></li></ul></div></div><style>.menu-list > li > a.is-active + .menu-list { display: block; }.menu-list > li > a + .menu-list { display: none; }</style><script src="/js/toc.js" defer></script></div><div class="card widget" data-type="categories"><div class="card-content"><div class="menu"><h3 class="menu-label">分类</h3><ul class="menu-list"><li><a class="level is-mobile" href="/categories/Android/"><span class="level-start"><span class="level-item">Android</span></span><span class="level-end"><span class="level-item tag">3</span></span></a></li><li><a class="level is-mobile" href="/categories/Home-Lab/"><span class="level-start"><span class="level-item">Home Lab</span></span><span class="level-end"><span class="level-item tag">4</span></span></a></li><li><a class="level is-mobile" href="/categories/LFS/"><span class="level-start"><span class="level-item">LFS</span></span><span class="level-end"><span class="level-item tag">4</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%8D%9A%E5%AE%A2%E6%90%AD%E5%BB%BA/"><span class="level-start"><span class="level-item">博客搭建</span></span><span class="level-end"><span class="level-item tag">3</span></span></a></li><li><a class="level is-mobile" href="/categories/%E6%9D%82%E8%B0%88/"><span class="level-start"><span class="level-item">杂谈</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li></ul></div></div></div><div class="card widget" data-type="archives"><div class="card-content"><div class="menu"><h3 class="menu-label">归档</h3><ul class="menu-list"><li><a class="level is-mobile" href="/archives/2021/11/"><span class="level-start"><span class="level-item">十一月 2021</span></span><span class="level-end"><span class="level-item tag">4</span></span></a></li><li><a class="level is-mobile" href="/archives/2021/06/"><span class="level-start"><span class="level-item">六月 2021</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2021/05/"><span class="level-start"><span class="level-item">五月 2021</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/archives/2021/04/"><span class="level-start"><span class="level-item">四月 2021</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2021/03/"><span class="level-start"><span class="level-item">三月 2021</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2020/10/"><span class="level-start"><span class="level-item">十月 2020</span></span><span class="level-end"><span class="level-item tag">6</span></span></a></li></ul></div></div></div><div class="card widget" data-type="tags"><div class="card-content"><div class="menu"><h3 class="menu-label">标签</h3><div class="field is-grouped is-grouped-multiline"><div class="control"><a class="tags has-addons" href="/tags/Android/"><span class="tag">Android</span><span class="tag">3</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Gentoo/"><span class="tag">Gentoo</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/LFS/"><span class="tag">LFS</span><span class="tag">4</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Linux/"><span class="tag">Linux</span><span class="tag">8</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Proxmox-VE/"><span class="tag">Proxmox VE</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%8D%9A%E5%AE%A2/"><span class="tag">博客</span><span class="tag">3</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%9D%82%E8%B0%88/"><span class="tag">杂谈</span><span class="tag">4</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E7%A1%AC%E4%BB%B6/"><span class="tag">硬件</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E7%BD%91%E7%BB%9C/"><span class="tag">网络</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E9%80%86%E5%90%91%E5%B7%A5%E7%A8%8B/"><span class="tag">逆向工程</span><span class="tag">3</span></a></div></div></div></div></div></div><!--!--></div></div></section><footer class="footer"><div class="container"><div class="level"><div class="level-start"><a class="footer-logo is-block mb-2" href="/">WilliamGong</a><p class="is-size-7"><span>&copy; 2021 William Gong</span>  Powered by <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a> &amp; <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank" rel="noopener">Icarus</a><br><span id="busuanzi_container_site_uv">共<span id="busuanzi_value_site_uv">0</span>个访客</span></p></div><div class="level-end"><div class="field has-addons"><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Creative Commons" href="https://creativecommons.org/"><i class="fab fa-creative-commons"></i></a></p><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/"><i class="fab fa-creative-commons-by"></i></a></p><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/WilliamGong/hexo-blog"><i class="fab fa-github"></i></a></p></div></div></div></div></footer><script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script><script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" async></script><script>moment.locale("zh-CN");</script><script>var IcarusThemeSettings = {
+            article: {
+                highlight: {
+                    clipboard: true,
+                    fold: 'unfolded'
+                }
+            }
+        };</script><script src="/js/column.js"></script><script src="/js/animation.js"></script><a id="back-to-top" title="回到顶端" href="javascript:;"><i class="fas fa-chevron-up"></i></a><script src="/js/back_to_top.js" defer></script><!--!--><!--!--><!--!--><!--!--><script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script><script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script><script>window.addEventListener("load", () => {
+            if (typeof $.fn.lightGallery === 'function') {
+                $('.article').lightGallery({ selector: '.gallery-item' });
+            }
+            if (typeof $.fn.justifiedGallery === 'function') {
+                if ($('.justified-gallery > p > .gallery-item').length) {
+                    $('.justified-gallery > p > .gallery-item').unwrap();
+                }
+                $('.justified-gallery').justifiedGallery();
+            }
+        });</script><!--!--><!--!--><script type="text/x-mathjax-config">MathJax.Hub.Config({
+            'HTML-CSS': {
+                matchFontHeight: false
+            },
+            SVG: {
+                matchFontHeight: false
+            },
+            CommonHTML: {
+                matchFontHeight: false
+            },
+            tex2jax: {
+                inlineMath: [
+                    ['$','$'],
+                    ['\\(','\\)']
+                ]
+            }
+        });</script><script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script><!--!--><!--!--><!--!--><script src="/js/main.js" defer></script><div class="searchbox"><div class="searchbox-container"><div class="searchbox-header"><div class="searchbox-input-container"><input class="searchbox-input" type="text" placeholder="想要查找什么..."></div><a class="searchbox-close" href="javascript:;">×</a></div><div class="searchbox-body"></div></div></div><script src="/js/insight.js" defer></script><script>document.addEventListener('DOMContentLoaded', function () {
+            loadInsight({"contentUrl":"/content.json"}, {"hint":"想要查找什么...","untitled":"(无标题)","posts":"文章","pages":"页面","categories":"分类","tags":"标签"});
+        });</script></body></html>

@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta><title>LFS 搭建 2 构建临时系统 - WilliamGong的博客</title><link rel="manifest" href="/manifest.json"><meta name="application-name" content="WilliamGong的博客"><meta name="msapplication-TileImage" content="/images/favicon.ico"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="WilliamGong的博客"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta description="准备工作做完之后，就要开始搭建临时工具链了。 但说是工具链，其实还包括一些其他工具。  开始前的准备 首先当然是登录lfs用户。 之后检查下$LFS是否设置正确。  echo $LFS  之后，需要检查以下部分是否正确设置，虽然大部分都不需要刻意留意，但不排除像我这样有特殊习惯的用户会不满足以下条件。    1. shell 用的是 bash。     不过目前大部分 shell 都是兼容 bas"><meta property="og:type" content="article"><meta property="og:title" content="LFS 搭建 2 构建临时系统"><meta property="og:url" content="https://williamgong.github.io/2021/11/23/lfs%E6%90%AD%E5%BB%BA2/"><meta property="og:site_name" content="WilliamGong的博客"><meta property="og:description" content="准备工作做完之后，就要开始搭建临时工具链了。 但说是工具链，其实还包括一些其他工具。  开始前的准备 首先当然是登录lfs用户。 之后检查下$LFS是否设置正确。  echo $LFS  之后，需要检查以下部分是否正确设置，虽然大部分都不需要刻意留意，但不排除像我这样有特殊习惯的用户会不满足以下条件。    1. shell 用的是 bash。     不过目前大部分 shell 都是兼容 bas"><meta property="og:locale" content="zh_CN"><meta property="og:image" content="https://williamgong.github.io/img/og_image.png"><meta property="article:published_time" content="2021-11-23T05:34:08.000Z"><meta property="article:modified_time" content="2021-11-28T08:42:18.322Z"><meta property="article:author" content="William Gong"><meta property="article:tag" content="Linux"><meta property="article:tag" content="LFS"><meta property="twitter:card" content="summary"><meta property="twitter:image" content="/img/og_image.png"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://williamgong.github.io/2021/11/23/lfs%E6%90%AD%E5%BB%BA2/"},"headline":"WilliamGong的博客","image":["https://williamgong.github.io/img/og_image.png"],"datePublished":"2021-11-23T05:34:08.000Z","dateModified":"2021-11-28T08:42:18.322Z","author":{"@type":"Person","name":"William Gong"},"description":"准备工作做完之后，就要开始搭建临时工具链了。 但说是工具链，其实还包括一些其他工具。  开始前的准备 首先当然是登录lfs用户。 之后检查下$LFS是否设置正确。  echo $LFS  之后，需要检查以下部分是否正确设置，虽然大部分都不需要刻意留意，但不排除像我这样有特殊习惯的用户会不满足以下条件。    1. shell 用的是 bash。     不过目前大部分 shell 都是兼容 bas"}</script><link rel="canonical" href="https://williamgong.github.io/2021/11/23/lfs%E6%90%AD%E5%BB%BA2/"><link rel="alternate" href="/atom.xml" title="WilliamGong的博客" type="application/atom+xml"><link rel="icon" href="/images/favicon.ico"><link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/5.13.1/css/all.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/atom-one-light.css"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;600&amp;family=Source+Code+Pro"><link rel="stylesheet" href="/css/default.css"><style>body>.footer,body>.navbar,body>.section{opacity:0}</style><!--!--><script>var _hmt = _hmt || [];
+        (function() {
+            var hm = document.createElement("script");
+            hm.src = "//hm.baidu.com/hm.js?2bbd01e65b22abbc1be85e9d4383034b";
+            var s = document.getElementsByTagName("script")[0];
+            s.parentNode.insertBefore(hm, s);
+        })();</script><meta name="msvalidate.01" content="30D1F37102A54580CBBD8B39C14D54A2"><script src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" defer></script><!--!--><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css"><!--!--><!--!--><!--!--><script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script><!--!--><!--!--><meta name="generator" content="Hexo 5.2.0"><style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"] > svg a {
+  fill: blue;
+  stroke: blue;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head><body class="is-2-column"><nav class="navbar navbar-main"><div class="container"><div class="navbar-brand justify-content-center"><a class="navbar-item navbar-logo" href="/">WilliamGong</a></div><div class="navbar-menu"><div class="navbar-start"><a class="navbar-item" href="/">Home</a><a class="navbar-item" href="/archives">Archives</a><a class="navbar-item" href="/categories">Categories</a><a class="navbar-item" href="/tags">Tags</a><a class="navbar-item" href="/about">About</a></div><div class="navbar-end"><a class="navbar-item" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/WilliamGong/hexo-blog"><i class="fab fa-github"></i></a><a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;"><i class="fas fa-list-ul"></i></a><a class="navbar-item search" title="搜索" href="javascript:;"><i class="fas fa-search"></i></a></div></div></div></nav><section class="section"><div class="container"><div class="columns"><div class="column order-2 column-main is-8-tablet is-8-desktop is-8-widescreen"><div class="card"><article class="card-content article" role="article"><div class="article-meta is-size-7 is-uppercase level is-mobile"><div class="level-left"><span class="level-item"><time dateTime="2021-11-23T05:34:08.000Z" title="2021-11-23T05:34:08.000Z">2021-11-23</time>发表</span><span class="level-item"><time dateTime="2021-11-28T08:42:18.322Z" title="2021-11-28T08:42:18.322Z">2021-11-28</time>更新</span><span class="level-item"><a class="link-muted" href="/categories/LFS/">LFS</a></span><span class="level-item">18 分钟读完 (大约2640个字)</span><span class="level-item" id="busuanzi_container_page_pv"><span id="busuanzi_value_page_pv">0</span>次访问</span></div></div><h1 class="title is-3 is-size-4-mobile">LFS 搭建 2 构建临时系统</h1><div class="content"><p>准备工作做完之后，就要开始搭建临时工具链了。<br>但说是工具链，其实还包括一些其他工具。</p>
+<h1 id="开始前的准备"><a href="#开始前的准备" class="headerlink" title="开始前的准备"></a>开始前的准备</h1><p>首先当然是登录<code>lfs</code>用户。<br>之后检查下<code>$LFS</code>是否设置正确。</p>
+<pre><code>echo $LFS</code></pre>
+<p>之后，需要检查以下部分是否正确设置，虽然大部分都不需要刻意留意，但不排除像我这样有特殊习惯的用户会不满足以下条件。    </p>
+<ol>
+<li><strong>shell 用的是 bash。</strong><br>不过目前大部分 shell 都是兼容 bash 的，比如我用的 zsh。</li>
+<li><strong>sh 符号链接到 bash。</strong><br>这个绝大多数发行版都满足。</li>
+<li><strong><code>/usr/bin/awk</code>符号链接到 gawk。</strong><br>这个也不用在意</li>
+<li><strong><code>/usr/bin/yacc</code> 是到 bison 的符号链接，或者是一个执行 bison 的小脚本。</strong><br>嗯，这个也是，除非你用的是 BSD（</li>
+</ol>
+<p>此外，对于构建过程，不要把源码放在<code>/mnt/lfs/tools</code>里，以免污染。<br>在没有特殊说明时，软件包的标准构建步骤如下</p>
+<ol>
+<li>解压并 cd 到源码目录</li>
+<li>根据 readme 编译，也可以 configure make make install 三连</li>
+<li>离开目录，再把它删了。</li>
+</ol>
+<p>现在，就正式开始构建。</p>
+<h1 id="构建交叉编译工具链"><a href="#构建交叉编译工具链" class="headerlink" title="构建交叉编译工具链"></a>构建交叉编译工具链</h1><p>现在先把目录切到<code>$LFS/sources</code>下。</p>
+<h2 id="Binutils-2-37-第一遍"><a href="#Binutils-2-37-第一遍" class="headerlink" title="Binutils-2.37 - 第一遍"></a>Binutils-2.37 - 第一遍</h2><p>先解压软件包</p>
+<pre><code>tar -xvf binutils-2.37.tar.xz</code></pre>
+<p>之后将 patch 放入目录并应用</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">cp binutils-2.37-upstream_fix-1.patch .&#x2F;binutils-2.37</span><br><span class="line">cd .&#x2F;binutils-2.37</span><br><span class="line">patch -p1 &lt; binutils-2.37-upstream_fix-1.patch</span><br></pre></td></tr></table></figure>
+<p>现在需要确认 pty 能否在 chroot 环境里工作</p>
+<pre><code>expect -c &quot;spawn ls&quot;</code></pre>
+<p>如果不能显示<code>spawn ls</code>的话，就说明环境没有为 pty 正常工作设置好。不过大多数情况下装<code>expect</code>包就行了。<br>根据 Binutils 手册建议，创建<code>build</code>目录：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mkdir build</span><br><span class="line">cd build</span><br></pre></td></tr></table></figure>
+<p>进行 configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">..&#x2F;configure --prefix&#x3D;$LFS&#x2F;tools \</span><br><span class="line">            --with-sysroot&#x3D;$LFS \</span><br><span class="line">            --target&#x3D;$LFS_TGT \</span><br><span class="line">            --disable-nls \</span><br><span class="line">            --disable-werror</span><br></pre></td></tr></table></figure>
+<p>开始编译：</p>
+<pre><code>make</code></pre>
+<p>安装：</p>
+<pre><code>make install -j1</code></pre>
+<p>至于加上这个<code>-j1</code>的原因，是为了规避 make 中的一个问题。</p>
+<h2 id="GCC-11-2-0-第一遍"><a href="#GCC-11-2-0-第一遍" class="headerlink" title="GCC 11.2.0  - 第一遍"></a>GCC 11.2.0  - 第一遍</h2><p>解压</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf gcc-11.2.0.tar.xz</span><br><span class="line">cd gcc-11.2.0</span><br></pre></td></tr></table></figure>
+<p>此处 gcc 需要 GMP，MPFR 和 MPC 软件包，将源码解压进 gcc 目录并随 gcc 一起编译</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">tar -xf ..&#x2F;mpfr-4.1.0.tar.xz</span><br><span class="line">mv -v mpfr-4.1.0 mpfr</span><br><span class="line">tar -xf ..&#x2F;gmp-6.2.1.tar.xz</span><br><span class="line">mv -v gmp-6.2.1 gmp</span><br><span class="line">tar -xf ..&#x2F;mpc-1.2.1.tar.gz</span><br><span class="line">mv -v mpc-1.2.1 mpc</span><br></pre></td></tr></table></figure>
+<p>对于 x86-64 的宿主机，将 64 位库的默认目录设为<code>lib</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">case $(uname -m) in</span><br><span class="line">x86_64)</span><br><span class="line">sed -e &#39;&#x2F;m64&#x3D;&#x2F;s&#x2F;lib64&#x2F;lib&#x2F;&#39; \</span><br><span class="line">-i.orig gcc&#x2F;config&#x2F;i386&#x2F;t-linux64</span><br><span class="line">;;</span><br><span class="line">esac</span><br></pre></td></tr></table></figure>
+<p>设置<code>build</code>目录：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mkdir build</span><br><span class="line">cd build</span><br></pre></td></tr></table></figure>
+<p>之后是一段巨长的 configure：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">..&#x2F;configure \</span><br><span class="line">--target&#x3D;$LFS_TGT \</span><br><span class="line">--prefix&#x3D;$LFS&#x2F;tools \</span><br><span class="line">--with-glibc-version&#x3D;2.11 \</span><br><span class="line">--with-sysroot&#x3D;$LFS \</span><br><span class="line">--with-newlib \</span><br><span class="line">--without-headers \</span><br><span class="line">--enable-initfini-array \</span><br><span class="line">--disable-nls \</span><br><span class="line">--disable-shared \</span><br><span class="line">--disable-multilib \</span><br><span class="line">--disable-decimal-float \</span><br><span class="line">--disable-threads \</span><br><span class="line">--disable-libatomic \</span><br><span class="line">--disable-libgomp \</span><br><span class="line">--disable-libquadmath \</span><br><span class="line">--disable-libssp \</span><br><span class="line">--disable-libvtv \</span><br><span class="line">--disable-libstdcxx \</span><br><span class="line">--enable-languages&#x3D;c,c++</span><br></pre></td></tr></table></figure>
+<p>毕竟是交叉编译还是第一遍，这里对gcc关闭了一堆功能，主要是避免编译依赖标准库的代码<br>编译：</p>
+<pre><code>make</code></pre>
+<p>安装：</p>
+<pre><code>make install</code></pre>
+<p>此处还要补上<code>limits.h</code>，具体原因是在第一次编译时，<code>$LFS/usr/include/limits.h</code>还不存在，因此此时 gcc 安装的是不完整的，自给自足的头文件。虽然不加对于编译 glibc 已经足够，但后续步骤需要完整的内部头文件，因此此时手动将 gcc 源码中的相关头文件抽出。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">cd ..</span><br><span class="line">cat gcc&#x2F;limitx.h gcc&#x2F;glimits.h gcc&#x2F;limity.h &gt; \</span><br><span class="line">&#96;dirname $($LFS_TGT-gcc -print-libgcc-file-name)&#96;&#x2F;install-tools&#x2F;include&#x2F;limits.h</span><br></pre></td></tr></table></figure>
+
+<h2 id="Linux-5-13-12-API-头文件"><a href="#Linux-5-13-12-API-头文件" class="headerlink" title="Linux-5.13.12 API 头文件"></a>Linux-5.13.12 API 头文件</h2><p>国际惯例进行解压</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf linux-5.13.12.tar.xz</span><br><span class="line">cd linux-5.13.12</span><br></pre></td></tr></table></figure>
+<p>这里只需要编译 glibc 用到的头文件，因此在确保目录里没有什么奇奇怪怪的东西（比如从其他地方 copy 进去的配置什么的）</p>
+<pre><code>make mrproper</code></pre>
+<p>之后再从源码中提取头文件然后手动复制到工具链目录下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">make headers</span><br><span class="line">find usr&#x2F;include -name &#39;.*&#39; -delete</span><br><span class="line">rm usr&#x2F;include&#x2F;Makefile</span><br><span class="line">cp -rv usr&#x2F;include $LFS&#x2F;usr</span><br></pre></td></tr></table></figure>
+<p>最后还是一样的删除整个目录。</p>
+<h2 id="Glibc-2-34"><a href="#Glibc-2-34" class="headerlink" title="Glibc-2.34"></a>Glibc-2.34</h2><p>glibc 2.34 需要加一个 patch</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf glibc-2.34.tar.xz</span><br><span class="line">cp glibc-2.34-fhs-1.patch glibc-2.34&#x2F;</span><br><span class="line">cd glibc-2.34&#x2F;</span><br><span class="line">patch -p1 &lt; glibc-2.34-fhs-1.patch</span><br></pre></td></tr></table></figure>
+<p>需要创建符合 LSB 的符号链接</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">case $(uname -m) in</span><br><span class="line">i?86) ln -sfv ld-linux.so.2 $LFS&#x2F;lib&#x2F;ld-lsb.so.3</span><br><span class="line">;;</span><br><span class="line">x86_64) ln -sfv ..&#x2F;lib&#x2F;ld-linux-x86-64.so.2 $LFS&#x2F;lib64</span><br><span class="line">ln -sfv ..&#x2F;lib&#x2F;ld-linux-x86-64.so.2 $LFS&#x2F;lib64&#x2F;ld-lsb-x86-64.so.3</span><br><span class="line">;;</span><br><span class="line">esac</span><br></pre></td></tr></table></figure>
+<p>之后是创建 build 目录：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mkdir -v build</span><br><span class="line">cd build</span><br></pre></td></tr></table></figure>
+<p>现在要确保<code>ldconfig</code>和<code>sln</code>被安装到了<code>/usr/bin</code>      </p>
+<pre><code>echo &quot;rootsbindir=/usr/sbin&quot; &gt; configparms</code></pre>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">..&#x2F;configure \</span><br><span class="line">--prefix&#x3D;&#x2F;usr \</span><br><span class="line">--host&#x3D;$LFS_TGT \</span><br><span class="line">--build&#x3D;$(..&#x2F;scripts&#x2F;config.guess) \</span><br><span class="line">--enable-kernel&#x3D;3.2 \</span><br><span class="line">--with-headers&#x3D;$LFS&#x2F;usr&#x2F;include \</span><br><span class="line">libc_cv_slibdir&#x3D;&#x2F;usr&#x2F;lib</span><br></pre></td></tr></table></figure>
+<p>编译</p>
+<pre><code>make</code></pre>
+<p>安装</p>
+<pre><code>make DESTDIR=$LFS install</code></pre>
+<p>此处最好检查<code>$LFS</code>，如果该变量是空的话 glibc 是会装的宿主机的。<br>此处要修复一个<code>ldd</code>的硬编码错误：</p>
+<pre><code>sed &#39;/RTLDLIST=/s@/usr@@g&#39; -i $LFS/usr/bin/ldd</code></pre>
+<h2 id="第一次检查"><a href="#第一次检查" class="headerlink" title="第一次检查"></a>第一次检查</h2><p>当上述包都安装完了之后，就需要检查工具链的基本功能能否正常工作。<br>找一个不会污染源码的目录，运行</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">echo &#39;int main()&#123;&#125;&#39; &gt; dummy.c</span><br><span class="line">$LFS_TGT-gcc dummy.c</span><br><span class="line">readelf -l a.out | grep &#39;&#x2F;ld-linux&#39;</span><br></pre></td></tr></table></figure>
+<p>如果一切正常，就只会有以下输出</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[Requesting program interpreter: &#x2F;lib64&#x2F;ld-linux-x86-64.so.2]</span><br></pre></td></tr></table></figure>
+<p>在 32 位机器上，解释器名字应该是<code>/lib/ld-linux.so.2.</code>。<br>现在删除刚刚创建的文件</p>
+<pre><code>rm -v dummy.c a.out</code></pre>
+<p>现在用 gcc 的工具安装<code>limits.h</code></p>
+<pre><code>$LFS/tools/libexec/gcc/$LFS_TGT/11.2.0/install-tools/mkheaders</code></pre>
+<blockquote>
+<p>虽然我在运行时会报错找不到文件，但<code>limits.h</code>确实安装到了目录<code>include-fixed</code>里</p>
+</blockquote>
+<h2 id="GCC-11-2-0-里的-Libstdc-第一遍"><a href="#GCC-11-2-0-里的-Libstdc-第一遍" class="headerlink" title="GCC-11.2.0 里的 Libstdc++ - 第一遍"></a>GCC-11.2.0 里的 Libstdc++ - 第一遍</h2><p>第一次编译 gcc 时，因为没有 glibc，因此并没有编译 libstdc++，现在安装了 glibc 后就需要编译它了。<br>现在解压 gcc 目录并创建 <code>build</code>：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf gcc-11.2.0.tar.xz</span><br><span class="line">cd gcc-11.2.0</span><br><span class="line">mkdir build</span><br><span class="line">cd build</span><br></pre></td></tr></table></figure>
+<p>之后是 configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">..&#x2F;libstdc++-v3&#x2F;configure \</span><br><span class="line">--host&#x3D;$LFS_TGT \</span><br><span class="line">--build&#x3D;$(..&#x2F;config.guess) \</span><br><span class="line">--prefix&#x3D;&#x2F;usr \</span><br><span class="line">--disable-multilib \</span><br><span class="line">--disable-nls \</span><br><span class="line">--disable-libstdcxx-pch \</span><br><span class="line">--with-gxx-include-dir&#x3D;&#x2F;tools&#x2F;$LFS_TGT&#x2F;include&#x2F;c++&#x2F;11.2.0</span><br></pre></td></tr></table></figure>
+<p>之后就是编译安装二连</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line">make DESTDIR&#x3D;$LFS install</span><br></pre></td></tr></table></figure>
+
+<h1 id="构建交叉编译临时工具"><a href="#构建交叉编译临时工具" class="headerlink" title="构建交叉编译临时工具"></a>构建交叉编译临时工具</h1><p>现在只是编译安装了基础的工具链，在此之上还要安装一些额外工具。<br>虽然说这些工具是在<code>chroot</code>之后用的，但现在就要编译。</p>
+<h2 id="M4-1-4-19"><a href="#M4-1-4-19" class="headerlink" title="M4-1.4.19"></a>M4-1.4.19</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf m4-1.4.19.tar.xz</span><br><span class="line">cd m4-1.4.19</span><br></pre></td></tr></table></figure>
+<p>此处不需要<code>build</code>目录。<br>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr \</span><br><span class="line">--host&#x3D;$LFS_TGT \</span><br><span class="line">--build&#x3D;$(build-aux&#x2F;config.guess)</span><br></pre></td></tr></table></figure>
+<p>编译和安装</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line">make DESTDIR&#x3D;$LFS install</span><br></pre></td></tr></table></figure>
+<h2 id="Ncurses-6-2"><a href="#Ncurses-6-2" class="headerlink" title="Ncurses-6.2"></a>Ncurses-6.2</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf ncurses-6.2.tar.gz</span><br><span class="line">cd ncurses-6.2</span><br></pre></td></tr></table></figure>
+<p>首先要确保在 configure 时要找得到<code>gawk</code></p>
+<pre><code>sed -i s/mawk// configure</code></pre>
+<p>之后需要编译<code>tic</code>程序</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mkdir build</span><br><span class="line">pushd build</span><br><span class="line">..&#x2F;configure</span><br><span class="line">make -C include</span><br><span class="line">make -C progs tic</span><br><span class="line">popd</span><br></pre></td></tr></table></figure>
+<p>之后**不要进入<code>build</code>**，直接开始 configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr \</span><br><span class="line">--host&#x3D;$LFS_TGT \</span><br><span class="line">--build&#x3D;$(.&#x2F;config.guess) \</span><br><span class="line">--mandir&#x3D;&#x2F;usr&#x2F;share&#x2F;man \</span><br><span class="line">--with-manpage-format&#x3D;normal \</span><br><span class="line">--with-shared \</span><br><span class="line">--without-debug \</span><br><span class="line">--without-ada \</span><br><span class="line">--without-normal \</span><br><span class="line">--enable-widec</span><br></pre></td></tr></table></figure>
+<p>编译</p>
+<pre><code>make</code></pre>
+<p>安装</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make DESTDIR&#x3D;$LFS TIC_PATH&#x3D;$(pwd)&#x2F;build&#x2F;progs&#x2F;tic install</span><br><span class="line">echo &quot;INPUT(-lncursesw)&quot; &gt; $LFS&#x2F;usr&#x2F;lib&#x2F;libncurses.so</span><br></pre></td></tr></table></figure>
+<h2 id="Bash-5-1-8"><a href="#Bash-5-1-8" class="headerlink" title="Bash-5.1.8"></a>Bash-5.1.8</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf bash-5.1.8.tar.gz</span><br><span class="line">cd bash-5.1.8</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr \</span><br><span class="line">--build&#x3D;$(support&#x2F;config.guess) \</span><br><span class="line">--host&#x3D;$LFS_TGT \</span><br><span class="line">--without-bash-malloc</span><br></pre></td></tr></table></figure>
+<p>编译和安装</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line">make DESTDIR&#x3D;$LFS install</span><br></pre></td></tr></table></figure>
+<p>加上<code>sh</code>到<code>bash</code>的符号链接</p>
+<pre><code>ln -sv bash $LFS/bin/sh</code></pre>
+<h2 id="Coreutils-8-32"><a href="#Coreutils-8-32" class="headerlink" title="Coreutils-8.32"></a>Coreutils-8.32</h2><p>此处要加一个 patch</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf coreutils-8.32.tar.xz</span><br><span class="line">cp coreutils-8.32-i18n-1.patch coreutils-8.32&#x2F;</span><br><span class="line">cd coreutils-8.32</span><br><span class="line">patch -Np1 -i coreutils-8.32-i18n-1.patch</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr \</span><br><span class="line">--host&#x3D;$LFS_TGT \</span><br><span class="line">--build&#x3D;$(build-aux&#x2F;config.guess) \</span><br><span class="line">--enable-install-program&#x3D;hostname \</span><br><span class="line">--enable-no-install-program&#x3D;kill,uptime</span><br></pre></td></tr></table></figure>
+<p>编译安装二连</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line">make DESTDIR&#x3D;$LFS install</span><br></pre></td></tr></table></figure>
+<p>此处需要移动部分文件的位置以适应有些硬编码的程序</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">mv -v $LFS&#x2F;usr&#x2F;bin&#x2F;chroot $LFS&#x2F;usr&#x2F;sbin</span><br><span class="line">mkdir -pv $LFS&#x2F;usr&#x2F;share&#x2F;man&#x2F;man8</span><br><span class="line">mv -v $LFS&#x2F;usr&#x2F;share&#x2F;man&#x2F;man1&#x2F;chroot.1 $LFS&#x2F;usr&#x2F;share&#x2F;man&#x2F;man8&#x2F;chroot.8</span><br><span class="line">sed -i &#39;s&#x2F;&quot;1&quot;&#x2F;&quot;8&quot;&#x2F;&#39; $LFS&#x2F;usr&#x2F;share&#x2F;man&#x2F;man8&#x2F;chroot.8</span><br></pre></td></tr></table></figure>
+<h2 id="Diffutils-3-8"><a href="#Diffutils-3-8" class="headerlink" title="Diffutils-3.8"></a>Diffutils-3.8</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf diffutils-3.8.tar.xz</span><br><span class="line">cd diffutils-3.8</span><br></pre></td></tr></table></figure>
+<p>三连</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr --host&#x3D;$LFS_TGT</span><br><span class="line">make</span><br><span class="line">make DESTDIR&#x3D;$LFS install</span><br></pre></td></tr></table></figure>
+<h2 id="File-5-40"><a href="#File-5-40" class="headerlink" title="File-5.40"></a>File-5.40</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf file-5.40.tar.gz</span><br><span class="line">cd file-5.40</span><br></pre></td></tr></table></figure>
+<p>这里的<code>file</code>命令需要与宿主机上的版本一致，因此需要特殊编译</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">mkdir build</span><br><span class="line">pushd build</span><br><span class="line">..&#x2F;configure --disable-bzlib \</span><br><span class="line">--disable-libseccomp \</span><br><span class="line">--disable-xzlib \</span><br><span class="line">--disable-zlib</span><br><span class="line">make</span><br><span class="line">popd</span><br></pre></td></tr></table></figure>
+<p>再进行三连，同样不要进入<code>build</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr --host&#x3D;$LFS_TGT --build&#x3D;$(.&#x2F;config.guess)</span><br><span class="line">make FILE_COMPILE&#x3D;$(pwd)&#x2F;build&#x2F;src&#x2F;file</span><br><span class="line">make DESTDIR&#x3D;$LFS install</span><br></pre></td></tr></table></figure>
+<h2 id="Findutils-4-8-0"><a href="#Findutils-4-8-0" class="headerlink" title="Findutils-4.8.0"></a>Findutils-4.8.0</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf findutils-4.8.0.tar.xz</span><br><span class="line">cd findutils-4.8.0</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr \</span><br><span class="line">--localstatedir&#x3D;&#x2F;var&#x2F;lib&#x2F;locate \</span><br><span class="line">--host&#x3D;$LFS_TGT \</span><br><span class="line">--build&#x3D;$(build-aux&#x2F;config.guess)</span><br></pre></td></tr></table></figure>
+<p>编译和安装</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line">make DESTDIR&#x3D;$LFS install</span><br></pre></td></tr></table></figure>
+<h2 id="Gawk-5-1-0"><a href="#Gawk-5-1-0" class="headerlink" title="Gawk-5.1.0"></a>Gawk-5.1.0</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf gawk-5.1.0.tar.xz</span><br><span class="line">cd gawk-5.1.0</span><br></pre></td></tr></table></figure>
+<p>首先确保不安装不需要的文件</p>
+<pre><code>sed -i &#39;s/extras//&#39; Makefile.in</code></pre>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr \</span><br><span class="line">--host&#x3D;$LFS_TGT \</span><br><span class="line">--build&#x3D;$(.&#x2F;config.guess)</span><br></pre></td></tr></table></figure>
+<p>编译和安装</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line">make DESTDIR&#x3D;$LFS install</span><br></pre></td></tr></table></figure>
+<h2 id="Grep-3-7"><a href="#Grep-3-7" class="headerlink" title="Grep-3.7"></a>Grep-3.7</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf grep-3.7.tar.xz</span><br><span class="line">cd grep-3.7</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr \</span><br><span class="line">--host&#x3D;$LFS_TGT</span><br></pre></td></tr></table></figure>
+<p>编译和安装</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line">make DESTDIR&#x3D;$LFS install</span><br></pre></td></tr></table></figure>
+<h2 id="Gzip-1-10"><a href="#Gzip-1-10" class="headerlink" title="Gzip-1.10"></a>Gzip-1.10</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf gzip-1.10.tar.xz</span><br><span class="line">cd gzip-1.10</span><br><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr --host&#x3D;$LFS_TGT</span><br><span class="line">make</span><br><span class="line">make DESTDIR&#x3D;$LFS install</span><br></pre></td></tr></table></figure>
+<h2 id="Make-4-3"><a href="#Make-4-3" class="headerlink" title="Make-4.3"></a>Make-4.3</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf make-4.3.tar.gz</span><br><span class="line">cd make-4.3</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr \</span><br><span class="line">--without-guile \</span><br><span class="line">--host&#x3D;$LFS_TGT \</span><br><span class="line">--build&#x3D;$(build-aux&#x2F;config.guess)</span><br></pre></td></tr></table></figure>
+<p>编译和安装</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line">make DESTDIR&#x3D;$LFS install</span><br></pre></td></tr></table></figure>
+<h2 id="Patch-2-7-6"><a href="#Patch-2-7-6" class="headerlink" title="Patch-2.7.6"></a>Patch-2.7.6</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf patch-2.7.6.tar.xz</span><br><span class="line">cd patch-2.7.6</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr \</span><br><span class="line">--host&#x3D;$LFS_TGT \</span><br><span class="line">--build&#x3D;$(build-aux&#x2F;config.guess)</span><br></pre></td></tr></table></figure>
+<p>编译和安装</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line">make DESTDIR&#x3D;$LFS install</span><br></pre></td></tr></table></figure>
+<h2 id="Sed-4-8"><a href="#Sed-4-8" class="headerlink" title="Sed-4.8"></a>Sed-4.8</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf sed-4.8.tar.xz</span><br><span class="line">cd sed-4.8</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr \</span><br><span class="line">--host&#x3D;$LFS_TGT</span><br></pre></td></tr></table></figure>
+<p>编译和安装</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line">make DESTDIR&#x3D;$LFS install</span><br></pre></td></tr></table></figure>
+<h2 id="Tar-1-34"><a href="#Tar-1-34" class="headerlink" title="Tar-1.34"></a>Tar-1.34</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf tar-1.34.tar.xz</span><br><span class="line">cd tar-1.34</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr \</span><br><span class="line">--host&#x3D;$LFS_TGT \</span><br><span class="line">--build&#x3D;$(build-aux&#x2F;config.guess)</span><br></pre></td></tr></table></figure>
+<p>编译和安装</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line">make DESTDIR&#x3D;$LFS install</span><br></pre></td></tr></table></figure>
+<h2 id="Xz-5-2-5"><a href="#Xz-5-2-5" class="headerlink" title="Xz-5.2.5"></a>Xz-5.2.5</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf xz-5.2.5.tar.xz</span><br><span class="line">cd xz-5.2.5</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr \</span><br><span class="line">--host&#x3D;$LFS_TGT \</span><br><span class="line">--build&#x3D;$(build-aux&#x2F;config.guess) \</span><br><span class="line">--disable-static \</span><br><span class="line">--docdir&#x3D;&#x2F;usr&#x2F;share&#x2F;doc&#x2F;xz-5.2.5</span><br></pre></td></tr></table></figure>
+<p>编译和安装</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line">make DESTDIR&#x3D;$LFS install</span><br></pre></td></tr></table></figure>
+<h2 id="Binutils-2-37-第二遍"><a href="#Binutils-2-37-第二遍" class="headerlink" title="Binutils-2.37 - 第二遍"></a>Binutils-2.37 - 第二遍</h2><p>这一次和第一次差不多，但有一些微妙的差别</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf binutils-2.37.tar.xz</span><br><span class="line">cp binutils-2.37-upstream_fix-1.patch binutils-2.37</span><br><span class="line">cd binutils-2.37</span><br><span class="line">patch -Np1 -i binutils-2.37-upstream_fix-1.patch</span><br><span class="line">mkdir build</span><br><span class="line">cd build</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">..&#x2F;configure \</span><br><span class="line">--prefix&#x3D;&#x2F;usr \</span><br><span class="line">--build&#x3D;$(..&#x2F;config.guess) \</span><br><span class="line">--host&#x3D;$LFS_TGT \</span><br><span class="line">--disable-nls \</span><br><span class="line">--enable-shared \</span><br><span class="line">--disable-werror \</span><br><span class="line">--enable-64-bit-bfd</span><br></pre></td></tr></table></figure>
+<p>编译</p>
+<pre><code>make</code></pre>
+<p>安装，并绕过导致<code>libctf.so</code>链接到宿主发行版 zlib 的问题</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make DESTDIR&#x3D;$LFS install -j1</span><br><span class="line">install -vm755 libctf&#x2F;.libs&#x2F;libctf.so.0.0.0 $LFS&#x2F;usr&#x2F;lib</span><br></pre></td></tr></table></figure>
+<h2 id="GCC-11-2-0-第二遍"><a href="#GCC-11-2-0-第二遍" class="headerlink" title="GCC-11.2.0 - 第二遍"></a>GCC-11.2.0 - 第二遍</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf gcc-11.2.0.tar.xz</span><br><span class="line">cd gcc-11.2.0</span><br></pre></td></tr></table></figure>
+<p>还是一样的解压 GMP, MPFR 和 MPC</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">tar -xf ..&#x2F;mpfr-4.1.0.tar.xz</span><br><span class="line">mv -v mpfr-4.1.0 mpfr</span><br><span class="line">tar -xf ..&#x2F;gmp-6.2.1.tar.xz</span><br><span class="line">mv -v gmp-6.2.1 gmp</span><br><span class="line">tar -xf ..&#x2F;mpc-1.2.1.tar.gz</span><br><span class="line">mv -v mpc-1.2.1 mpc</span><br></pre></td></tr></table></figure>
+<p>还是一样的设置 64 位库的符号链接</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">case $(uname -m) in</span><br><span class="line">x86_64)</span><br><span class="line">sed -e &#39;&#x2F;m64&#x3D;&#x2F;s&#x2F;lib64&#x2F;lib&#x2F;&#39; -i.orig gcc&#x2F;config&#x2F;i386&#x2F;t-linux64</span><br><span class="line">;;</span><br><span class="line">esac</span><br></pre></td></tr></table></figure>
+<p>建立<code>build</code>目录</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mkdir build</span><br><span class="line">cd build</span><br></pre></td></tr></table></figure>
+<p>创建一个符号链接以在构建<code>libgcc</code>时启用对 posix 线程的支持</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mkdir -pv $LFS_TGT&#x2F;libgcc</span><br><span class="line">ln -s ..&#x2F;..&#x2F;..&#x2F;libgcc&#x2F;gthr-posix.h $LFS_TGT&#x2F;libgcc&#x2F;gthr-default.h</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">..&#x2F;configure \</span><br><span class="line">--build&#x3D;$(..&#x2F;config.guess) \</span><br><span class="line">--host&#x3D;$LFS_TGT \</span><br><span class="line">--prefix&#x3D;&#x2F;usr \</span><br><span class="line">CC_FOR_TARGET&#x3D;$LFS_TGT-gcc \</span><br><span class="line">--with-build-sysroot&#x3D;$LFS \</span><br><span class="line">--enable-initfini-array \</span><br><span class="line">--disable-nls \</span><br><span class="line">--disable-multilib \</span><br><span class="line">--disable-decimal-float \</span><br><span class="line">--disable-libatomic \</span><br><span class="line">--disable-libgomp \</span><br><span class="line">--disable-libquadmath \</span><br><span class="line">--disable-libssp \</span><br><span class="line">--disable-libvtv \</span><br><span class="line">--disable-libstdcxx \</span><br><span class="line">--enable-languages&#x3D;c,c++</span><br></pre></td></tr></table></figure>
+<p>编译和安装</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line">make DESTDIR&#x3D;$LFS install</span><br></pre></td></tr></table></figure>
+<p>一样的创建<code>cc</code>到<code>gcc</code>的符号链接</p>
+<pre><code>ln -sv gcc $LFS/usr/bin/cc</code></pre>
+<p>至此本文就到这里，接下来就要进行 chroot 了。</p>
+<blockquote>
+<p>11.0 的手册相较于 9.0 而言第二部分的内容实在是太多了……<br>不理解为什么要把 chroot 后的操作也要放在这一部分。</p>
+</blockquote>
+</div><div class="article-licensing box"><div class="licensing-title"><p>LFS 搭建 2 构建临时系统</p><p><a href="https://williamgong.github.io/2021/11/23/lfs%E6%90%AD%E5%BB%BA2/">https://williamgong.github.io/2021/11/23/lfs%E6%90%AD%E5%BB%BA2/</a></p></div><div class="licensing-meta level is-mobile"><div class="level-left"><div class="level-item is-narrow"><div><h6>作者</h6><p>William Gong</p></div></div><div class="level-item is-narrow"><div><h6>发布于</h6><p>2021-11-23</p></div></div><div class="level-item is-narrow"><div><h6>更新于</h6><p>2021-11-28</p></div></div><div class="level-item is-narrow"><div><h6>许可协议</h6><p><a class="icon" rel="noopener" target="_blank" title="Creative Commons" href="https://creativecommons.org/"><i class="fab fa-creative-commons"></i></a><a class="icon" rel="noopener" target="_blank" title="Attribution" href="https://creativecommons.org/licenses/by/4.0/"><i class="fab fa-creative-commons-by"></i></a><a class="icon" rel="noopener" target="_blank" title="Noncommercial" href="https://creativecommons.org/licenses/by-nc/4.0/"><i class="fab fa-creative-commons-nc"></i></a></p></div></div></div></div></div><div class="article-tags is-size-7 mb-4"><span class="mr-2">#</span><a class="link-muted mr-2" rel="tag" href="/tags/Linux/">Linux</a><a class="link-muted mr-2" rel="tag" href="/tags/LFS/">LFS</a></div><!--!--></article></div><!--!--><nav class="post-navigation mt-4 level is-mobile"><div class="level-start"><a class="article-nav-prev level level-item link-muted" href="/2021/11/27/lfs%E6%90%AD%E5%BB%BA3/"><i class="level-item fas fa-chevron-left"></i><span class="level-item">lfs搭建3 Chroot 以及构建额外工具</span></a></div><div class="level-end"><a class="article-nav-next level level-item link-muted" href="/2021/11/19/lfs%E6%90%AD%E5%BB%BA1/"><span class="level-item">LFS 搭建 1 准备工作</span><i class="level-item fas fa-chevron-right"></i></a></div></nav><!--!--></div><div class="column column-left is-4-tablet is-4-desktop is-4-widescreen  order-1 is-sticky"><div class="card widget" data-type="profile"><div class="card-content"><nav class="level"><div class="level-item has-text-centered flex-shrink-1"><div><figure class="image is-128x128 mx-auto mb-2"><img class="avatar" src="/images/avatar.png" alt="William Gong"></figure><p class="title is-size-4 is-block" style="line-height:inherit;">William Gong</p><p class="is-size-6 is-block">一条咸鱼</p><p class="is-size-6 is-flex justify-content-center"><i class="fas fa-map-marker-alt mr-1"></i><span>Guangzhou China</span></p></div></div></nav><nav class="level is-mobile"><div class="level-item has-text-centered is-marginless"><div><p class="heading">文章</p><a href="/archives"><p class="title">15</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">分类</p><a href="/categories"><p class="title">5</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">标签</p><a href="/tags"><p class="title">10</p></a></div></div></nav><div class="level"><a class="level-item button is-primary is-rounded" href="https://github.com/WilliamGong" target="_blank" rel="noopener">关注我</a></div><div class="level is-mobile"><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Github" href="https://github.com/WilliamGong"><i class="fab fa-github"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Zhihu" href="https://www.zhihu.com/people/gong-tai-lin"><i class="fab fa-zhihu"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="RSS" href="/atom.xml"><i class="fas fa-rss"></i></a></div></div></div><div class="card widget" id="toc" data-type="toc"><div class="card-content"><div class="menu"><h3 class="menu-label">目录</h3><ul class="menu-list"><li><a class="level is-mobile" href="#开始前的准备"><span class="level-left"><span class="level-item">1</span><span class="level-item">开始前的准备</span></span></a></li><li><a class="level is-mobile" href="#构建交叉编译工具链"><span class="level-left"><span class="level-item">2</span><span class="level-item">构建交叉编译工具链</span></span></a><ul class="menu-list"><li><a class="level is-mobile" href="#Binutils-2-37-第一遍"><span class="level-left"><span class="level-item">2.1</span><span class="level-item">Binutils-2.37 - 第一遍</span></span></a></li><li><a class="level is-mobile" href="#GCC-11-2-0-第一遍"><span class="level-left"><span class="level-item">2.2</span><span class="level-item">GCC 11.2.0  - 第一遍</span></span></a></li><li><a class="level is-mobile" href="#Linux-5-13-12-API-头文件"><span class="level-left"><span class="level-item">2.3</span><span class="level-item">Linux-5.13.12 API 头文件</span></span></a></li><li><a class="level is-mobile" href="#Glibc-2-34"><span class="level-left"><span class="level-item">2.4</span><span class="level-item">Glibc-2.34</span></span></a></li><li><a class="level is-mobile" href="#第一次检查"><span class="level-left"><span class="level-item">2.5</span><span class="level-item">第一次检查</span></span></a></li><li><a class="level is-mobile" href="#GCC-11-2-0-里的-Libstdc-第一遍"><span class="level-left"><span class="level-item">2.6</span><span class="level-item">GCC-11.2.0 里的 Libstdc++ - 第一遍</span></span></a></li></ul></li><li><a class="level is-mobile" href="#构建交叉编译临时工具"><span class="level-left"><span class="level-item">3</span><span class="level-item">构建交叉编译临时工具</span></span></a><ul class="menu-list"><li><a class="level is-mobile" href="#M4-1-4-19"><span class="level-left"><span class="level-item">3.1</span><span class="level-item">M4-1.4.19</span></span></a></li><li><a class="level is-mobile" href="#Ncurses-6-2"><span class="level-left"><span class="level-item">3.2</span><span class="level-item">Ncurses-6.2</span></span></a></li><li><a class="level is-mobile" href="#Bash-5-1-8"><span class="level-left"><span class="level-item">3.3</span><span class="level-item">Bash-5.1.8</span></span></a></li><li><a class="level is-mobile" href="#Coreutils-8-32"><span class="level-left"><span class="level-item">3.4</span><span class="level-item">Coreutils-8.32</span></span></a></li><li><a class="level is-mobile" href="#Diffutils-3-8"><span class="level-left"><span class="level-item">3.5</span><span class="level-item">Diffutils-3.8</span></span></a></li><li><a class="level is-mobile" href="#File-5-40"><span class="level-left"><span class="level-item">3.6</span><span class="level-item">File-5.40</span></span></a></li><li><a class="level is-mobile" href="#Findutils-4-8-0"><span class="level-left"><span class="level-item">3.7</span><span class="level-item">Findutils-4.8.0</span></span></a></li><li><a class="level is-mobile" href="#Gawk-5-1-0"><span class="level-left"><span class="level-item">3.8</span><span class="level-item">Gawk-5.1.0</span></span></a></li><li><a class="level is-mobile" href="#Grep-3-7"><span class="level-left"><span class="level-item">3.9</span><span class="level-item">Grep-3.7</span></span></a></li><li><a class="level is-mobile" href="#Gzip-1-10"><span class="level-left"><span class="level-item">3.10</span><span class="level-item">Gzip-1.10</span></span></a></li><li><a class="level is-mobile" href="#Make-4-3"><span class="level-left"><span class="level-item">3.11</span><span class="level-item">Make-4.3</span></span></a></li><li><a class="level is-mobile" href="#Patch-2-7-6"><span class="level-left"><span class="level-item">3.12</span><span class="level-item">Patch-2.7.6</span></span></a></li><li><a class="level is-mobile" href="#Sed-4-8"><span class="level-left"><span class="level-item">3.13</span><span class="level-item">Sed-4.8</span></span></a></li><li><a class="level is-mobile" href="#Tar-1-34"><span class="level-left"><span class="level-item">3.14</span><span class="level-item">Tar-1.34</span></span></a></li><li><a class="level is-mobile" href="#Xz-5-2-5"><span class="level-left"><span class="level-item">3.15</span><span class="level-item">Xz-5.2.5</span></span></a></li><li><a class="level is-mobile" href="#Binutils-2-37-第二遍"><span class="level-left"><span class="level-item">3.16</span><span class="level-item">Binutils-2.37 - 第二遍</span></span></a></li><li><a class="level is-mobile" href="#GCC-11-2-0-第二遍"><span class="level-left"><span class="level-item">3.17</span><span class="level-item">GCC-11.2.0 - 第二遍</span></span></a></li></ul></li></ul></div></div><style>.menu-list > li > a.is-active + .menu-list { display: block; }.menu-list > li > a + .menu-list { display: none; }</style><script src="/js/toc.js" defer></script></div><div class="card widget" data-type="categories"><div class="card-content"><div class="menu"><h3 class="menu-label">分类</h3><ul class="menu-list"><li><a class="level is-mobile" href="/categories/Android/"><span class="level-start"><span class="level-item">Android</span></span><span class="level-end"><span class="level-item tag">3</span></span></a></li><li><a class="level is-mobile" href="/categories/Home-Lab/"><span class="level-start"><span class="level-item">Home Lab</span></span><span class="level-end"><span class="level-item tag">4</span></span></a></li><li><a class="level is-mobile" href="/categories/LFS/"><span class="level-start"><span class="level-item">LFS</span></span><span class="level-end"><span class="level-item tag">4</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%8D%9A%E5%AE%A2%E6%90%AD%E5%BB%BA/"><span class="level-start"><span class="level-item">博客搭建</span></span><span class="level-end"><span class="level-item tag">3</span></span></a></li><li><a class="level is-mobile" href="/categories/%E6%9D%82%E8%B0%88/"><span class="level-start"><span class="level-item">杂谈</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li></ul></div></div></div><div class="card widget" data-type="archives"><div class="card-content"><div class="menu"><h3 class="menu-label">归档</h3><ul class="menu-list"><li><a class="level is-mobile" href="/archives/2021/11/"><span class="level-start"><span class="level-item">十一月 2021</span></span><span class="level-end"><span class="level-item tag">4</span></span></a></li><li><a class="level is-mobile" href="/archives/2021/06/"><span class="level-start"><span class="level-item">六月 2021</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2021/05/"><span class="level-start"><span class="level-item">五月 2021</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/archives/2021/04/"><span class="level-start"><span class="level-item">四月 2021</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2021/03/"><span class="level-start"><span class="level-item">三月 2021</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2020/10/"><span class="level-start"><span class="level-item">十月 2020</span></span><span class="level-end"><span class="level-item tag">6</span></span></a></li></ul></div></div></div><div class="card widget" data-type="tags"><div class="card-content"><div class="menu"><h3 class="menu-label">标签</h3><div class="field is-grouped is-grouped-multiline"><div class="control"><a class="tags has-addons" href="/tags/Android/"><span class="tag">Android</span><span class="tag">3</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Gentoo/"><span class="tag">Gentoo</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/LFS/"><span class="tag">LFS</span><span class="tag">4</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Linux/"><span class="tag">Linux</span><span class="tag">8</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Proxmox-VE/"><span class="tag">Proxmox VE</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%8D%9A%E5%AE%A2/"><span class="tag">博客</span><span class="tag">3</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%9D%82%E8%B0%88/"><span class="tag">杂谈</span><span class="tag">4</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E7%A1%AC%E4%BB%B6/"><span class="tag">硬件</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E7%BD%91%E7%BB%9C/"><span class="tag">网络</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E9%80%86%E5%90%91%E5%B7%A5%E7%A8%8B/"><span class="tag">逆向工程</span><span class="tag">3</span></a></div></div></div></div></div></div><!--!--></div></div></section><footer class="footer"><div class="container"><div class="level"><div class="level-start"><a class="footer-logo is-block mb-2" href="/">WilliamGong</a><p class="is-size-7"><span>&copy; 2021 William Gong</span>  Powered by <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a> &amp; <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank" rel="noopener">Icarus</a><br><span id="busuanzi_container_site_uv">共<span id="busuanzi_value_site_uv">0</span>个访客</span></p></div><div class="level-end"><div class="field has-addons"><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Creative Commons" href="https://creativecommons.org/"><i class="fab fa-creative-commons"></i></a></p><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/"><i class="fab fa-creative-commons-by"></i></a></p><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/WilliamGong/hexo-blog"><i class="fab fa-github"></i></a></p></div></div></div></div></footer><script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script><script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" async></script><script>moment.locale("zh-CN");</script><script>var IcarusThemeSettings = {
+            article: {
+                highlight: {
+                    clipboard: true,
+                    fold: 'unfolded'
+                }
+            }
+        };</script><script src="/js/column.js"></script><script src="/js/animation.js"></script><a id="back-to-top" title="回到顶端" href="javascript:;"><i class="fas fa-chevron-up"></i></a><script src="/js/back_to_top.js" defer></script><!--!--><!--!--><!--!--><!--!--><script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script><script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script><script>window.addEventListener("load", () => {
+            if (typeof $.fn.lightGallery === 'function') {
+                $('.article').lightGallery({ selector: '.gallery-item' });
+            }
+            if (typeof $.fn.justifiedGallery === 'function') {
+                if ($('.justified-gallery > p > .gallery-item').length) {
+                    $('.justified-gallery > p > .gallery-item').unwrap();
+                }
+                $('.justified-gallery').justifiedGallery();
+            }
+        });</script><!--!--><!--!--><script type="text/x-mathjax-config">MathJax.Hub.Config({
+            'HTML-CSS': {
+                matchFontHeight: false
+            },
+            SVG: {
+                matchFontHeight: false
+            },
+            CommonHTML: {
+                matchFontHeight: false
+            },
+            tex2jax: {
+                inlineMath: [
+                    ['$','$'],
+                    ['\\(','\\)']
+                ]
+            }
+        });</script><script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script><!--!--><!--!--><!--!--><script src="/js/main.js" defer></script><div class="searchbox"><div class="searchbox-container"><div class="searchbox-header"><div class="searchbox-input-container"><input class="searchbox-input" type="text" placeholder="想要查找什么..."></div><a class="searchbox-close" href="javascript:;">×</a></div><div class="searchbox-body"></div></div></div><script src="/js/insight.js" defer></script><script>document.addEventListener('DOMContentLoaded', function () {
+            loadInsight({"contentUrl":"/content.json"}, {"hint":"想要查找什么...","untitled":"(无标题)","posts":"文章","pages":"页面","categories":"分类","tags":"标签"});
+        });</script></body></html>
