@@ -496,7 +496,7 @@
 <p>此外，还要创建一些目录</p>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">if [ -h $LFS&#x2F;dev&#x2F;shm ]; then</span><br><span class="line">  mkdir -pv $LFS&#x2F;$(readlink $LFS&#x2F;dev&#x2F;shm)</span><br><span class="line">fi</span><br></pre></td></tr></table></figure>
 <h1 id="Chroot"><a href="#Chroot" class="headerlink" title="Chroot"></a>Chroot</h1><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">chroot &quot;$LFS&quot; &#x2F;usr&#x2F;bin&#x2F;env -i   \</span><br><span class="line">    HOME&#x3D;&#x2F;root                  \</span><br><span class="line">    TERM&#x3D;&quot;$TERM&quot;                \</span><br><span class="line">    PS1&#x3D;&#39;(lfs chroot) \u:\w\$ &#39; \</span><br><span class="line">    PATH&#x3D;&#x2F;usr&#x2F;bin:&#x2F;usr&#x2F;sbin \</span><br><span class="line">    &#x2F;bin&#x2F;bash --login +h</span><br></pre></td></tr></table></figure>
-<p>这时的 bash 会显示 I have no name，因为没有<code>/etc/passwd</code>，这时正常的，虽然有点丑 :D</p>
+<p>这时的 bash 会显示 I have no name，因为没有<code>/etc/passwd</code>，这是正常的，虽然有点丑 :D</p>
 <h2 id="退出时进入-Chroot-的操作"><a href="#退出时进入-Chroot-的操作" class="headerlink" title="退出时进入 Chroot 的操作"></a>退出时进入 Chroot 的操作</h2><p>如果只是退出而不关机/重启的话，直接运行上面的命令就行，不然就要重新挂载这些文件系统。<br>不过建议每次 chroot 前都检查一次。</p>
 <h1 id="创建目录"><a href="#创建目录" class="headerlink" title="创建目录"></a>创建目录</h1><p>现在再创建一些还需要的目录</p>
 <pre><code>mkdir -pv /&#123;boot,home,mnt,opt,srv&#125;</code></pre>
