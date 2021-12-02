@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta><title>LFS 搭建 4 正式构建 (1) - WilliamGong的博客</title><link rel="manifest" href="/manifest.json"><meta name="application-name" content="WilliamGong的博客"><meta name="msapplication-TileImage" content="/images/favicon.ico"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="WilliamGong的博客"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta description="在临时系统构建完成后，从现在开始，就进入正式构建阶段。 根据 LFS 手册，绝大多数包在编译时都不使用静态库，且一般都会在 configure 中直接关闭，不过 gcc 之类需要的除外。 在现阶段我并没有移植包管理器的打算，也许以后有时间我会出一篇将 Portage 移植到 LFS 的教程吧。 :D  进入 Chroot 环境 每次登录，都要检查$LFS：  echo $LFS  首先先挂载&amp;#x2F;de"><meta property="og:type" content="article"><meta property="og:title" content="LFS 搭建 4 正式构建 (1)"><meta property="og:url" content="https://williamgong.github.io/2021/11/30/lfs%E6%90%AD%E5%BB%BA4/"><meta property="og:site_name" content="WilliamGong的博客"><meta property="og:description" content="在临时系统构建完成后，从现在开始，就进入正式构建阶段。 根据 LFS 手册，绝大多数包在编译时都不使用静态库，且一般都会在 configure 中直接关闭，不过 gcc 之类需要的除外。 在现阶段我并没有移植包管理器的打算，也许以后有时间我会出一篇将 Portage 移植到 LFS 的教程吧。 :D  进入 Chroot 环境 每次登录，都要检查$LFS：  echo $LFS  首先先挂载&amp;#x2F;de"><meta property="og:locale" content="zh_CN"><meta property="og:image" content="https://williamgong.github.io/img/og_image.png"><meta property="article:published_time" content="2021-11-30T22:30:05.000Z"><meta property="article:modified_time" content="2021-12-02T15:47:22.135Z"><meta property="article:author" content="William Gong"><meta property="article:tag" content="Linux"><meta property="article:tag" content="LFS"><meta property="twitter:card" content="summary"><meta property="twitter:image" content="/img/og_image.png"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://williamgong.github.io/2021/11/30/lfs%E6%90%AD%E5%BB%BA4/"},"headline":"WilliamGong的博客","image":["https://williamgong.github.io/img/og_image.png"],"datePublished":"2021-11-30T22:30:05.000Z","dateModified":"2021-12-02T15:47:22.135Z","author":{"@type":"Person","name":"William Gong"},"description":"在临时系统构建完成后，从现在开始，就进入正式构建阶段。 根据 LFS 手册，绝大多数包在编译时都不使用静态库，且一般都会在 configure 中直接关闭，不过 gcc 之类需要的除外。 在现阶段我并没有移植包管理器的打算，也许以后有时间我会出一篇将 Portage 移植到 LFS 的教程吧。 :D  进入 Chroot 环境 每次登录，都要检查$LFS：  echo $LFS  首先先挂载&#x2F;de"}</script><link rel="canonical" href="https://williamgong.github.io/2021/11/30/lfs%E6%90%AD%E5%BB%BA4/"><link rel="alternate" href="/atom.xml" title="WilliamGong的博客" type="application/atom+xml"><link rel="icon" href="/images/favicon.ico"><link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/5.13.1/css/all.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/atom-one-light.css"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;600&amp;family=Source+Code+Pro"><link rel="stylesheet" href="/css/default.css"><style>body>.footer,body>.navbar,body>.section{opacity:0}</style><!--!--><script>var _hmt = _hmt || [];
+        (function() {
+            var hm = document.createElement("script");
+            hm.src = "//hm.baidu.com/hm.js?2bbd01e65b22abbc1be85e9d4383034b";
+            var s = document.getElementsByTagName("script")[0];
+            s.parentNode.insertBefore(hm, s);
+        })();</script><meta name="msvalidate.01" content="30D1F37102A54580CBBD8B39C14D54A2"><script src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" defer></script><!--!--><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css"><!--!--><!--!--><!--!--><script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script><!--!--><!--!--><meta name="generator" content="Hexo 5.2.0"><style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"] > svg a {
+  fill: blue;
+  stroke: blue;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head><body class="is-2-column"><nav class="navbar navbar-main"><div class="container"><div class="navbar-brand justify-content-center"><a class="navbar-item navbar-logo" href="/">WilliamGong</a></div><div class="navbar-menu"><div class="navbar-start"><a class="navbar-item" href="/">Home</a><a class="navbar-item" href="/archives">Archives</a><a class="navbar-item" href="/categories">Categories</a><a class="navbar-item" href="/tags">Tags</a><a class="navbar-item" href="/about">About</a></div><div class="navbar-end"><a class="navbar-item" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/WilliamGong/hexo-blog"><i class="fab fa-github"></i></a><a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;"><i class="fas fa-list-ul"></i></a><a class="navbar-item search" title="搜索" href="javascript:;"><i class="fas fa-search"></i></a></div></div></div></nav><section class="section"><div class="container"><div class="columns"><div class="column order-2 column-main is-8-tablet is-8-desktop is-8-widescreen"><div class="card"><article class="card-content article" role="article"><div class="article-meta is-size-7 is-uppercase level is-mobile"><div class="level-left"><span class="level-item"><time dateTime="2021-11-30T22:30:05.000Z" title="2021-11-30T22:30:05.000Z">2021-12-01</time>发表</span><span class="level-item"><time dateTime="2021-12-02T15:47:22.135Z" title="2021-12-02T15:47:22.135Z">2021-12-02</time>更新</span><span class="level-item"><a class="link-muted" href="/categories/LFS/">LFS</a></span><span class="level-item">34 分钟读完 (大约5037个字)</span><span class="level-item" id="busuanzi_container_page_pv"><span id="busuanzi_value_page_pv">0</span>次访问</span></div></div><h1 class="title is-3 is-size-4-mobile">LFS 搭建 4 正式构建 (1)</h1><div class="content"><p>在临时系统构建完成后，从现在开始，就进入正式构建阶段。<br>根据 LFS 手册，绝大多数包在编译时都不使用静态库，且一般都会在 configure 中直接关闭，不过 gcc 之类需要的除外。<br>在现阶段我并没有移植包管理器的打算，也许以后有时间我会出一篇将 Portage 移植到 LFS 的教程吧。 :D</p>
+<h1 id="进入-Chroot-环境"><a href="#进入-Chroot-环境" class="headerlink" title="进入 Chroot 环境"></a>进入 Chroot 环境</h1><p>每次登录，都要检查<code>$LFS</code>：</p>
+<pre><code>echo $LFS</code></pre>
+<p>首先先挂载<code>/dev</code>和内核虚拟文件系统</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">mount -v --bind &#x2F;dev $LFS&#x2F;dev</span><br><span class="line">mount -v --bind &#x2F;dev&#x2F;pts $LFS&#x2F;dev&#x2F;pts</span><br><span class="line">mount -vt proc proc $LFS&#x2F;proc</span><br><span class="line">mount -vt sysfs sysfs $LFS&#x2F;sys</span><br><span class="line">mount -vt tmpfs tmpfs $LFS&#x2F;run</span><br></pre></td></tr></table></figure>
+<p>现在开始 chroot</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">chroot &quot;$LFS&quot; &#x2F;usr&#x2F;bin&#x2F;env -i   \</span><br><span class="line">    HOME&#x3D;&#x2F;root                  \</span><br><span class="line">    TERM&#x3D;&quot;$TERM&quot;                \</span><br><span class="line">    PS1&#x3D;&#39;(lfs chroot) \u:\w\$ &#39; \</span><br><span class="line">    PATH&#x3D;&#x2F;usr&#x2F;bin:&#x2F;usr&#x2F;sbin \</span><br><span class="line">    &#x2F;bin&#x2F;bash --login +h</span><br></pre></td></tr></table></figure>
+
+<h1 id="构建软件包"><a href="#构建软件包" class="headerlink" title="构建软件包"></a>构建软件包</h1><h2 id="Man-pages-5-13"><a href="#Man-pages-5-13" class="headerlink" title="Man-pages-5.13"></a>Man-pages-5.13</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf man-pages-5.13.tar.xz</span><br><span class="line">cd man-pages-5.13</span><br><span class="line">make prefix&#x3D;&#x2F;usr install</span><br></pre></td></tr></table></figure>
+<h2 id="Iana-Etc-20210611"><a href="#Iana-Etc-20210611" class="headerlink" title="Iana-Etc-20210611"></a>Iana-Etc-20210611</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf iana-etc-20210611.tar.gz</span><br><span class="line">cd iana-etc-20210611</span><br></pre></td></tr></table></figure>
+<p>这个包只需要将文件复制到<code>/etc</code>下即可。</p>
+<pre><code>cp services protocols /etc</code></pre>
+<h2 id="Glibc-2-34"><a href="#Glibc-2-34" class="headerlink" title="Glibc-2.34"></a>Glibc-2.34</h2><p>这应该是最后一遍了吧。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf glibc-2.34.tar.xz</span><br><span class="line">cp glibc-2.34-fhs-1.patch glibc-2.34&#x2F;</span><br><span class="line">cd glibc-2.34</span><br></pre></td></tr></table></figure>
+<p>此处需要修复一个安全问题：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sed -e &#39;&#x2F;NOTIFY_REMOVED)&#x2F;s&#x2F;)&#x2F; \&amp;\&amp; data.attr !&#x3D; NULL)&#x2F;&#39; \</span><br><span class="line">    -i sysdeps&#x2F;unix&#x2F;sysv&#x2F;linux&#x2F;mq_notify.c</span><br></pre></td></tr></table></figure>
+<p>打补丁</p>
+<pre><code>patch -Np1 -i glibc-2.34-fhs-1.patch</code></pre>
+<blockquote>
+<p>嗯，手册现在才打 patch，可能是之前编译的都是临时用的所以不用打吧。XD</p>
+</blockquote>
+<p>建立<code>/build</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mkdir build</span><br><span class="line">cd build</span><br></pre></td></tr></table></figure>
+<p>确保将<code>ldconfig</code>和<code>sln</code>工具安装到<code>/usr/sbin</code>目录中：</p>
+<pre><code>echo &quot;rootsbindir=/usr/sbin&quot; &gt; configparms</code></pre>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">..&#x2F;configure --prefix&#x3D;&#x2F;usr                            \</span><br><span class="line">             --disable-werror                         \</span><br><span class="line">             --enable-kernel&#x3D;3.2                      \</span><br><span class="line">             --enable-stack-protector&#x3D;strong          \</span><br><span class="line">             --with-headers&#x3D;&#x2F;usr&#x2F;include              \</span><br><span class="line">             libc_cv_slibdir&#x3D;&#x2F;usr&#x2F;lib</span><br></pre></td></tr></table></figure>
+<p>编译：</p>
+<pre><code>make</code></pre>
+<p>检查：</p>
+<pre><code>make check</code></pre>
+<p>glibc 这么大的包，一共 4488 项测试，有几个错误很正常，如果只有几个错误的话忽略就行。此外手册已知会出现两个错误，分别是：</p>
+<ul>
+<li><code>io/tst-lchmod</code>在 chroot 里会失败</li>
+<li><code>misc/tst-ttyname</code>在 chroot 里失败</li>
+</ul>
+<blockquote>
+<p>我就报了这两个错</p>
+</blockquote>
+<p>安装时，可能会报错<code>/etc/ld.so.conf</code>找不到，此错误无害，建立个空的就行</p>
+<pre><code>touch /etc/ld.so.conf</code></pre>
+<p>还要修正 Makefile 跳过一个检查</p>
+<pre><code>sed &#39;/test-installation/s@$(PERL)@echo not running@&#39; -i ../Makefile</code></pre>
+<p>安装</p>
+<pre><code>make install</code></pre>
+<p>改正<code>ldd</code>脚本中硬编码的可执行文件加载器路径</p>
+<pre><code>sed &#39;/RTLDLIST=/s@/usr@@g&#39; -i /usr/bin/ldd</code></pre>
+<p>安装<code>nscd</code>的配置文件和运行时目录：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cp -v ..&#x2F;nscd&#x2F;nscd.conf &#x2F;etc&#x2F;nscd.conf</span><br><span class="line">mkdir -pv &#x2F;var&#x2F;cache&#x2F;nscd</span><br></pre></td></tr></table></figure>
+<p>安装<code>nscd</code>对 systemd 的支持</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">install -v -Dm644 ..&#x2F;nscd&#x2F;nscd.tmpfiles &#x2F;usr&#x2F;lib&#x2F;tmpfiles.d&#x2F;nscd.conf</span><br><span class="line">install -v -Dm644 ..&#x2F;nscd&#x2F;nscd.service &#x2F;usr&#x2F;lib&#x2F;systemd&#x2F;system&#x2F;nscd.service</span><br></pre></td></tr></table></figure>
+<p>现在安装 locale。<br>手册提供的只能用于满足测试，简体中文是没有的。因此下面的命令我加了<code>zh_CN-UTF-8</code>。</p>
+<blockquote>
+<p>所以此处会使用安装单个 locale 的指令。</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">mkdir -pv &#x2F;usr&#x2F;lib&#x2F;locale</span><br><span class="line">localedef -i POSIX -f UTF-8 C.UTF-8 2&gt; &#x2F;dev&#x2F;null || true</span><br><span class="line">localedef -i cs_CZ -f UTF-8 cs_CZ.UTF-8</span><br><span class="line">localedef -i de_DE -f ISO-8859-1 de_DE</span><br><span class="line">localedef -i de_DE@euro -f ISO-8859-15 de_DE@euro</span><br><span class="line">localedef -i de_DE -f UTF-8 de_DE.UTF-8</span><br><span class="line">localedef -i el_GR -f ISO-8859-7 el_GR</span><br><span class="line">localedef -i en_GB -f ISO-8859-1 en_GB</span><br><span class="line">localedef -i en_GB -f UTF-8 en_GB.UTF-8</span><br><span class="line">localedef -i en_HK -f ISO-8859-1 en_HK</span><br><span class="line">localedef -i en_PH -f ISO-8859-1 en_PH</span><br><span class="line">localedef -i en_US -f ISO-8859-1 en_US</span><br><span class="line">localedef -i en_US -f UTF-8 en_US.UTF-8</span><br><span class="line">localedef -i es_ES -f ISO-8859-15 es_ES@euro</span><br><span class="line">localedef -i es_MX -f ISO-8859-1 es_MX</span><br><span class="line">localedef -i fa_IR -f UTF-8 fa_IR</span><br><span class="line">localedef -i fr_FR -f ISO-8859-1 fr_FR</span><br><span class="line">localedef -i fr_FR@euro -f ISO-8859-15 fr_FR@euro</span><br><span class="line">localedef -i fr_FR -f UTF-8 fr_FR.UTF-8</span><br><span class="line">localedef -i is_IS -f ISO-8859-1 is_IS</span><br><span class="line">localedef -i is_IS -f UTF-8 is_IS.UTF-8</span><br><span class="line">localedef -i it_IT -f ISO-8859-1 it_IT</span><br><span class="line">localedef -i it_IT -f ISO-8859-15 it_IT@euro</span><br><span class="line">localedef -i it_IT -f UTF-8 it_IT.UTF-8</span><br><span class="line">localedef -i ja_JP -f EUC-JP ja_JP</span><br><span class="line">localedef -i ja_JP -f SHIFT_JIS ja_JP.SIJS 2&gt; &#x2F;dev&#x2F;null || true</span><br><span class="line">localedef -i ja_JP -f UTF-8 ja_JP.UTF-8</span><br><span class="line">localedef -i nl_NL@euro -f ISO-8859-15 nl_NL@euro</span><br><span class="line">localedef -i ru_RU -f KOI8-R ru_RU.KOI8-R</span><br><span class="line">localedef -i ru_RU -f UTF-8 ru_RU.UTF-8</span><br><span class="line">localedef -i se_NO -f UTF-8 se_NO.UTF-8</span><br><span class="line">localedef -i ta_IN -f UTF-8 ta_IN.UTF-8</span><br><span class="line">localedef -i tr_TR -f UTF-8 tr_TR.UTF-8</span><br><span class="line">localedef -i zh_CN -f GB18030 zh_CN.GB18030</span><br><span class="line">localedef -i zh_HK -f BIG5-HKSCS zh_HK.BIG5-HKSCS</span><br><span class="line">localedef -i zh_TW -f UTF-8 zh_TW.UTF-8</span><br><span class="line">localedef -i zh_CN -f UTF-8 zh_CN.UTF-8</span><br></pre></td></tr></table></figure>
+<p>当然也可以全部安装，不过需要的时间就很长了：</p>
+<pre><code>make localedata/install-locales</code></pre>
+<h3 id="配置-Glibc"><a href="#配置-Glibc" class="headerlink" title="配置 Glibc"></a>配置 Glibc</h3><p>创建<code>/etc/nsswitch.conf</code>：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">cat &gt; &#x2F;etc&#x2F;nsswitch.conf &lt;&lt; &quot;EOF&quot;</span><br><span class="line"># Begin &#x2F;etc&#x2F;nsswitch.conf</span><br><span class="line"></span><br><span class="line">passwd: files</span><br><span class="line">group: files</span><br><span class="line">shadow: files</span><br><span class="line"></span><br><span class="line">hosts: files dns</span><br><span class="line">networks: files</span><br><span class="line"></span><br><span class="line">protocols: files</span><br><span class="line">services: files</span><br><span class="line">ethers: files</span><br><span class="line">rpc: files</span><br><span class="line"></span><br><span class="line"># End &#x2F;etc&#x2F;nsswitch.conf</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+<p>安装时区数据：<br><strong>注意：此时仍在 glibc 的<code>build</code>目录下，如果在其他目录要根据路径改下列命令。</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">tar -xf ..&#x2F;..&#x2F;tzdata2021a.tar.gz</span><br><span class="line"></span><br><span class="line">ZONEINFO&#x3D;&#x2F;usr&#x2F;share&#x2F;zoneinfo</span><br><span class="line">mkdir -pv $ZONEINFO&#x2F;&#123;posix,right&#125;</span><br><span class="line"></span><br><span class="line">for tz in etcetera southamerica northamerica europe africa antarctica  \</span><br><span class="line">          asia australasia backward; do</span><br><span class="line">    zic -L &#x2F;dev&#x2F;null   -d $ZONEINFO       $&#123;tz&#125;</span><br><span class="line">    zic -L &#x2F;dev&#x2F;null   -d $ZONEINFO&#x2F;posix $&#123;tz&#125;</span><br><span class="line">    zic -L leapseconds -d $ZONEINFO&#x2F;right $&#123;tz&#125;</span><br><span class="line">done</span><br><span class="line"></span><br><span class="line">cp -v zone.tab zone1970.tab iso3166.tab $ZONEINFO</span><br><span class="line">zic -d $ZONEINFO -p America&#x2F;New_York</span><br><span class="line">unset ZONEINF</span><br></pre></td></tr></table></figure>
+<p>此处顺手配置时区：</p>
+<pre><code>ln -sfv /usr/share/zoneinfo/Asia/Shanghai /etc/localtime</code></pre>
+<p>现在还需要配置动态加载器。<br>创建一个新的<code>/etc/ld.so.conf</code>： </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">cat &gt; &#x2F;etc&#x2F;ld.so.conf &lt;&lt; &quot;EOF&quot;</span><br><span class="line"># Begin &#x2F;etc&#x2F;ld.so.conf</span><br><span class="line">&#x2F;usr&#x2F;local&#x2F;lib</span><br><span class="line">&#x2F;opt&#x2F;lib</span><br><span class="line"></span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+<p>不过下面的命令可能会更优雅：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">cat &gt;&gt; &#x2F;etc&#x2F;ld.so.conf &lt;&lt; &quot;EOF&quot;</span><br><span class="line"># Add an include directory</span><br><span class="line">include &#x2F;etc&#x2F;ld.so.conf.d&#x2F;*.conf</span><br><span class="line"></span><br><span class="line">EOF</span><br><span class="line">mkdir -pv &#x2F;etc&#x2F;ld.so.conf.d</span><br></pre></td></tr></table></figure>
+<p>以上两个命令可以全部使用，因为第二个命令不会擦除原<code>ld.conf.d</code>的内容</p>
+<h2 id="Zlib-1-2-11"><a href="#Zlib-1-2-11" class="headerlink" title="Zlib-1.2.11"></a>Zlib-1.2.11</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf zlib-1.2.11.tar.xz</span><br><span class="line">cd zlib-1.2.11</span><br><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr</span><br><span class="line">make</span><br><span class="line">make check</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<p>此处需要删除一些无用的静态库</p>
+<pre><code>rm -fv /usr/lib/libz.a</code></pre>
+<h2 id="Bzip2-1-0-8"><a href="#Bzip2-1-0-8" class="headerlink" title="Bzip2-1.0.8"></a>Bzip2-1.0.8</h2><p>这里需要加补丁</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf bzip2-1.0.8.tar.gz</span><br><span class="line">cp bzip2-1.0.8-install_docs-1.patch bzip2-1.0.8</span><br><span class="line">cd bzip2-1.0.8</span><br><span class="line">patch -Np1 -i bzip2-1.0.8-install_docs-1.patch</span><br></pre></td></tr></table></figure>
+<p>需要修改 Makefile 保证安装的符号链接是相对的。</p>
+<pre><code>sed -i &#39;s@\(ln -s -f \)$(PREFIX)/bin/@\1@&#39; Makefile</code></pre>
+<p>确保<code>man</code>被安装到正确位置：</p>
+<pre><code>sed -i &quot;s@(PREFIX)/man@(PREFIX)/share/man@g&quot; Makefile</code></pre>
+<p>编译前还需要进行一些处理</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make -f Makefile-libbz2_so</span><br><span class="line">make clean</span><br></pre></td></tr></table></figure>
+<p>编译：</p>
+<pre><code>make</code></pre>
+<p>安装：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">make PREFIX&#x3D;&#x2F;usr install</span><br><span class="line">cp -av libbz2.so.* &#x2F;usr&#x2F;lib</span><br><span class="line">ln -sv libbz2.so.1.0.8 &#x2F;usr&#x2F;lib&#x2F;libbz2.so</span><br><span class="line">cp -v bzip2-shared &#x2F;usr&#x2F;bin&#x2F;bzip2</span><br><span class="line">for i in &#x2F;usr&#x2F;bin&#x2F;&#123;bzcat,bunzip2&#125;; do</span><br><span class="line">  ln -sfv bzip2 $i</span><br><span class="line">done</span><br></pre></td></tr></table></figure>
+<p>此处对其共享库进行了一些处理<br>删除静态库</p>
+<pre><code>rm -fv /usr/lib/libbz2.a</code></pre>
+<h2 id="Xz-5-2-5"><a href="#Xz-5-2-5" class="headerlink" title="Xz-5.2.5"></a>Xz-5.2.5</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf xz-5.2.5.tar.xz</span><br><span class="line">cd xz-5.2.5</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr    \</span><br><span class="line">            --disable-static \</span><br><span class="line">            --docdir&#x3D;&#x2F;usr&#x2F;share&#x2F;doc&#x2F;xz-5.2.5</span><br></pre></td></tr></table></figure>
+<p>编译，检查和安装</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line">make check</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<h2 id="Zstd-1-5-0"><a href="#Zstd-1-5-0" class="headerlink" title="Zstd-1.5.0"></a>Zstd-1.5.0</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf zstd-1.5.0.tar.gz</span><br><span class="line">cd zstd-1.5.0</span><br><span class="line">make</span><br><span class="line">make check</span><br></pre></td></tr></table></figure>
+<p>如果编译时出现 “failed” 时，那没有问题，只有 “FAIL”才是失败。但测试需要全部通过。<br>安装</p>
+<pre><code>make prefix=/usr install</code></pre>
+<p>删除静态库</p>
+<pre><code>rm -v /usr/lib/libzstd.a</code></pre>
+<h2 id="File-5-40"><a href="#File-5-40" class="headerlink" title="File-5.40"></a>File-5.40</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf file-5.40.tar.gz</span><br><span class="line">cd file-5.40</span><br><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr</span><br><span class="line">make</span><br><span class="line">make check</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<h2 id="Readline-8-1"><a href="#Readline-8-1" class="headerlink" title="Readline-8.1"></a>Readline-8.1</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf readline-8.1.tar.gz</span><br><span class="line">cd readline-8.1</span><br></pre></td></tr></table></figure>
+<p>重新安装<code>Readline</code>会导致旧版本的库被重命名为<code>&lt;库名称&gt;.old</code>。这一般不是问题，但某些情况下会触发<code>ldconfig</code>的一个链接 bug。运行下面的两条 sed 命令防止这种情况： </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sed -i &#39;&#x2F;MV.*old&#x2F;d&#39; Makefile.in</span><br><span class="line">sed -i &#39;&#x2F;&#123;OLDSUFF&#125;&#x2F;c:&#39; support&#x2F;shlib-install</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr    \</span><br><span class="line">            --disable-static \</span><br><span class="line">            --with-curses    \</span><br><span class="line">            --docdir&#x3D;&#x2F;usr&#x2F;share&#x2F;doc&#x2F;readline-8.1</span><br></pre></td></tr></table></figure>
+<p>编译和安装：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make SHLIB_LIBS&#x3D;&quot;-lncursesw&quot;</span><br><span class="line">make SHLIB_LIBS&#x3D;&quot;-lncursesw&quot; install</span><br></pre></td></tr></table></figure>
+<p>安装文档（可选）：</p>
+<pre><code>install -v -m644 doc/*.&#123;ps,pdf,html,dvi&#125; /usr/share/doc/readline-8.1</code></pre>
+<h2 id="M4-1-4-19"><a href="#M4-1-4-19" class="headerlink" title="M4-1.4.19"></a>M4-1.4.19</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf m4-1.4.19.tar.xz</span><br><span class="line">cd m4-1.4.19</span><br><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr</span><br><span class="line">make</span><br><span class="line">make check</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<h2 id="Bc-5-0-0"><a href="#Bc-5-0-0" class="headerlink" title="Bc-5.0.0"></a>Bc-5.0.0</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf bc-5.0.0.tar.xz</span><br><span class="line">cd bc-5.0.0</span><br><span class="line">CC&#x3D;gcc .&#x2F;configure --prefix&#x3D;&#x2F;usr -G -O3</span><br><span class="line">make</span><br><span class="line">make test</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>这个<code>O3</code>就很灵性</p>
+</blockquote>
+<h2 id="Flex-2-6-4"><a href="#Flex-2-6-4" class="headerlink" title="Flex-2.6.4"></a>Flex-2.6.4</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf flex-2.6.4.tar.gz</span><br><span class="line">cd flex-2.6.4</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr \</span><br><span class="line">            --docdir&#x3D;&#x2F;usr&#x2F;share&#x2F;doc&#x2F;flex-2.6.4 \</span><br><span class="line">            --disable-static</span><br></pre></td></tr></table></figure>
+<p>编译，检查和安装</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line">make check</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<p>添加一个<code>lex</code>到<code>flex</code>的符号链接</p>
+<pre><code>ln -sv flex /usr/bin/lex</code></pre>
+<h2 id="Tcl-8-6-11"><a href="#Tcl-8-6-11" class="headerlink" title="Tcl-8.6.11"></a>Tcl-8.6.11</h2><p>这是三个需要用到的测试套件其中之一。<br>进入安装目录后，要解压文档，在解压源码时要注意区分。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf tcl8.6.11-src.tar.gz</span><br><span class="line">cd tcl8.6.11</span><br><span class="line">tar -xf ..&#x2F;tcl8.6.11-html.tar.gz --strip-components&#x3D;1</span><br></pre></td></tr></table></figure>
+<p>这里的 configure 有点特殊</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">SRCDIR&#x3D;$(pwd)</span><br><span class="line">cd unix</span><br><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr           \</span><br><span class="line">            --mandir&#x3D;&#x2F;usr&#x2F;share&#x2F;man \</span><br><span class="line">            $([ &quot;$(uname -m)&quot; &#x3D; x86_64 ] &amp;&amp; echo --enable-64bit)</span><br></pre></td></tr></table></figure>
+<p>编译，也有点特殊</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line"></span><br><span class="line">sed -e &quot;s|$SRCDIR&#x2F;unix|&#x2F;usr&#x2F;lib|&quot; \</span><br><span class="line">    -e &quot;s|$SRCDIR|&#x2F;usr&#x2F;include|&quot;  \</span><br><span class="line">    -i tclConfig.sh</span><br><span class="line"></span><br><span class="line">sed -e &quot;s|$SRCDIR&#x2F;unix&#x2F;pkgs&#x2F;tdbc1.1.2|&#x2F;usr&#x2F;lib&#x2F;tdbc1.1.2|&quot; \</span><br><span class="line">    -e &quot;s|$SRCDIR&#x2F;pkgs&#x2F;tdbc1.1.2&#x2F;generic|&#x2F;usr&#x2F;include|&quot;    \</span><br><span class="line">    -e &quot;s|$SRCDIR&#x2F;pkgs&#x2F;tdbc1.1.2&#x2F;library|&#x2F;usr&#x2F;lib&#x2F;tcl8.6|&quot; \</span><br><span class="line">    -e &quot;s|$SRCDIR&#x2F;pkgs&#x2F;tdbc1.1.2|&#x2F;usr&#x2F;include|&quot;            \</span><br><span class="line">    -i pkgs&#x2F;tdbc1.1.2&#x2F;tdbcConfig.sh</span><br><span class="line"></span><br><span class="line">sed -e &quot;s|$SRCDIR&#x2F;unix&#x2F;pkgs&#x2F;itcl4.2.1|&#x2F;usr&#x2F;lib&#x2F;itcl4.2.1|&quot; \</span><br><span class="line">    -e &quot;s|$SRCDIR&#x2F;pkgs&#x2F;itcl4.2.1&#x2F;generic|&#x2F;usr&#x2F;include|&quot;    \</span><br><span class="line">    -e &quot;s|$SRCDIR&#x2F;pkgs&#x2F;itcl4.2.1|&#x2F;usr&#x2F;include|&quot;            \</span><br><span class="line">    -i pkgs&#x2F;itcl4.2.1&#x2F;itclConfig.sh</span><br><span class="line"></span><br><span class="line">unset SRCDIR</span><br></pre></td></tr></table></figure>
+<p>测试</p>
+<pre><code>make test</code></pre>
+<p>已知测试<code>unitInit-1.2</code>会失败。</p>
+<blockquote>
+<p>但我测试时全部成功了</p>
+</blockquote>
+<p>安装，并修改安装好的库的权限：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make install</span><br><span class="line">chmod -v u+w &#x2F;usr&#x2F;lib&#x2F;libtcl8.6.so</span><br></pre></td></tr></table></figure>
+<p>安装头文件，这是等一会要安装的<code>expect</code>的依赖</p>
+<pre><code>make install-private-headers</code></pre>
+<p>创建符号链接</p>
+<pre><code>ln -sfv tclsh8.6 /usr/bin/tclsh</code></pre>
+<p>最后修改一个与 Perl man 冲突的错误：</p>
+<pre><code>mv /usr/share/man/man3/&#123;Thread,Tcl_Thread&#125;.3</code></pre>
+<h2 id="Expect-5-45-4"><a href="#Expect-5-45-4" class="headerlink" title="Expect-5.45.4"></a>Expect-5.45.4</h2><p>三个测试套件之二。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf expect5.45.4.tar.gz</span><br><span class="line">cd expect5.45.4</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr           \</span><br><span class="line">            --with-tcl&#x3D;&#x2F;usr&#x2F;lib     \</span><br><span class="line">            --enable-shared         \</span><br><span class="line">            --mandir&#x3D;&#x2F;usr&#x2F;share&#x2F;man \</span><br><span class="line">            --with-tclinclude&#x3D;&#x2F;usr&#x2F;include</span><br></pre></td></tr></table></figure>
+<p>编译，测试</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line">make test</span><br></pre></td></tr></table></figure>
+<p>安装</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make install</span><br><span class="line">ln -svf expect5.45.4&#x2F;libexpect5.45.4.so &#x2F;usr&#x2F;lib</span><br></pre></td></tr></table></figure>
+<h2 id="DejaGNU-1-6-3"><a href="#DejaGNU-1-6-3" class="headerlink" title="DejaGNU-1.6.3"></a>DejaGNU-1.6.3</h2><p>三个测试套件之三。<br>此处需要<code>build</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf dejagnu-1.6.3.tar.gz</span><br><span class="line">cd dejagnu-1.6.3</span><br><span class="line">mkdir -v build</span><br><span class="line">cd       build</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">..&#x2F;configure --prefix&#x3D;&#x2F;usr</span><br><span class="line">makeinfo --html --no-split -o doc&#x2F;dejagnu.html ..&#x2F;doc&#x2F;dejagnu.texi</span><br><span class="line">makeinfo --plaintext       -o doc&#x2F;dejagnu.txt  ..&#x2F;doc&#x2F;dejagnu.texi</span><br></pre></td></tr></table></figure>
+<p>直接安装</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">make install</span><br><span class="line">install -v -dm755  &#x2F;usr&#x2F;share&#x2F;doc&#x2F;dejagnu-1.6.3</span><br><span class="line">install -v -m644   doc&#x2F;dejagnu.&#123;html,txt&#125; &#x2F;usr&#x2F;share&#x2F;doc&#x2F;dejagnu-1.6.3</span><br></pre></td></tr></table></figure>
+<p>当然也可以测试，虽然没有必要</p>
+<pre><code>make check</code></pre>
+<h2 id="Binutils-2-37"><a href="#Binutils-2-37" class="headerlink" title="Binutils-2.37"></a>Binutils-2.37</h2><p>这应该是最后一遍了吧。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf binutils-2.37.tar.xz</span><br><span class="line">cp binutils-2.37-upstream_fix-1.patch binutils-2.37</span><br><span class="line">cd binutils-2.37</span><br></pre></td></tr></table></figure>
+<p>同样需要对 pty 进行测试，该命令应返回<code>spawn ls</code>：</p>
+<pre><code>expect -c &quot;spawn ls&quot;</code></pre>
+<p>手册在这里打补丁，其实在进入目录后就可以打：</p>
+<pre><code>patch -Np1 -i binutils-2.37-upstream_fix-1.patch</code></pre>
+<p>绕过关于<code>man</code>的一个问题：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sed -i &#39;63d&#39; etc&#x2F;texi2pod.pl</span><br><span class="line">find -name \*.1 -delete</span><br></pre></td></tr></table></figure>
+<p>创建<code>build</code>：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mkdir -v build</span><br><span class="line">cd       build</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">..&#x2F;configure --prefix&#x3D;&#x2F;usr       \</span><br><span class="line">             --enable-gold       \</span><br><span class="line">             --enable-ld&#x3D;default \</span><br><span class="line">             --enable-plugins    \</span><br><span class="line">             --enable-shared     \</span><br><span class="line">             --disable-werror    \</span><br><span class="line">             --enable-64-bit-bfd \</span><br><span class="line">             --with-system-zlib</span><br></pre></td></tr></table></figure>
+<p>编译及测试</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make tooldir&#x3D;&#x2F;usr</span><br><span class="line">make -k check</span><br></pre></td></tr></table></figure>
+<p><strong>一定要运行测试！</strong><br>已知四项与<code>zlib</code>有关的测试会失败。     </p>
+<blockquote>
+<p>嗯，我全中。</p>
+</blockquote>
+<p>安装，删除无用的静态库</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make tooldir&#x3D;&#x2F;usr install -j1</span><br><span class="line">rm -fv &#x2F;usr&#x2F;lib&#x2F;lib&#123;bfd,ctf,ctf-nobfd,opcodes&#125;.a</span><br></pre></td></tr></table></figure>
+<h2 id="GMP-6-2-1"><a href="#GMP-6-2-1" class="headerlink" title="GMP-6.2.1"></a>GMP-6.2.1</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf gmp-6.2.1.tar.xz</span><br><span class="line">cd gmp-6.2.1</span><br></pre></td></tr></table></figure>
+<p>如果宿主机硬件是 64 位但安装的 OS 是 32 位，还有<code>CFLAGS</code>变量时，需要运行</p>
+<pre><code>ABI=32 ./configure ...</code></pre>
+<p>取消处理器优化，生成通用库。（可选，且如果宿主机 CPU 与目标机一致就不用选，在 live CD 里编译也不用。）</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cp -v configfsf.guess config.guess</span><br><span class="line">cp -v configfsf.sub   config.sub</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr    \</span><br><span class="line">            --enable-cxx     \</span><br><span class="line">            --disable-static \</span><br><span class="line">            --docdir&#x3D;&#x2F;usr&#x2F;share&#x2F;doc&#x2F;gmp-6.2.1</span><br></pre></td></tr></table></figure>
+<p>编译并生成文档</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line">make html</span><br></pre></td></tr></table></figure>
+<p>测试：<br><strong>一定要测试！</strong><br>因为 GMP 编译时是针对 CPU 高度优化的，有时会错误识别 CPU 功能导致测试时大概率出现一堆<code>Illegal instruction</code>。此时就需要重新编译并加上<code>--build=x86_64-pc-linux-gnu</code>。<br>以下命令查看通过测试的数量，GMP 一共 197 项测试，务必全部通过。</p>
+<pre><code>awk &#39;/# PASS:/&#123;total+=$3&#125; ; END&#123;print total&#125;&#39; gmp-check-log</code></pre>
+<p>安装，包括文档</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make install</span><br><span class="line">make install-html</span><br></pre></td></tr></table></figure>
+<h2 id="MPFR-4-1-0"><a href="#MPFR-4-1-0" class="headerlink" title="MPFR-4.1.0"></a>MPFR-4.1.0</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf mpfr-4.1.0.tar.xz</span><br><span class="line">cd mpfr-4.1.0</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr        \</span><br><span class="line">            --disable-static     \</span><br><span class="line">            --enable-thread-safe \</span><br><span class="line">            --docdir&#x3D;&#x2F;usr&#x2F;share&#x2F;doc&#x2F;mpfr-4.1.0</span><br></pre></td></tr></table></figure>
+<p>编译并生成文档：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line">make html</span><br></pre></td></tr></table></figure>
+<p>测试：<br><strong>一定要测试！</strong></p>
+<pre><code>make check</code></pre>
+<p>确保全部通过。<br>安装</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make install</span><br><span class="line">make install-html</span><br></pre></td></tr></table></figure>
+<h2 id="MPC-1-2-1"><a href="#MPC-1-2-1" class="headerlink" title="MPC-1.2.1"></a>MPC-1.2.1</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf mpc-1.2.1.tar.gz</span><br><span class="line">cd mpc-1.2.1</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr    \</span><br><span class="line">            --disable-static \</span><br><span class="line">            --docdir&#x3D;&#x2F;usr&#x2F;share&#x2F;doc&#x2F;mpc-1.2.1</span><br></pre></td></tr></table></figure>
+<p>编译，测试和安装</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line">make html</span><br><span class="line">make check</span><br><span class="line">make install</span><br><span class="line">make install-html</span><br></pre></td></tr></table></figure>
+<h2 id="Attr-2-5-1"><a href="#Attr-2-5-1" class="headerlink" title="Attr-2.5.1"></a>Attr-2.5.1</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf attr-2.5.1.tar.gz</span><br><span class="line">cd attr-2.5.1</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr     \</span><br><span class="line">            --disable-static  \</span><br><span class="line">            --sysconfdir&#x3D;&#x2F;etc \</span><br><span class="line">            --docdir&#x3D;&#x2F;usr&#x2F;share&#x2F;doc&#x2F;attr-2.5.1</span><br></pre></td></tr></table></figure>
+<p>编译，测试和安装</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line">make check</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<h2 id="Acl-2-3-1"><a href="#Acl-2-3-1" class="headerlink" title="Acl-2.3.1"></a>Acl-2.3.1</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf acl-2.3.1.tar.xz</span><br><span class="line">cd acl-2.3.1</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr         \</span><br><span class="line">            --disable-static      \</span><br><span class="line">            --docdir&#x3D;&#x2F;usr&#x2F;share&#x2F;doc&#x2F;acl-2.3.1</span><br></pre></td></tr></table></figure>
+<p>编译和安装：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<p><code>acl</code>的测试依赖于连接了 Acl 的Coreutils，如果要测试，应在 Coreutils 构建完成后进行。<br>因此，构建完成后源码目录暂不删除。</p>
+<h2 id="Libcap-2-53"><a href="#Libcap-2-53" class="headerlink" title="Libcap-2.53"></a>Libcap-2.53</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf libcap-2.53.tar.xz</span><br><span class="line">cd libcap-2.53</span><br></pre></td></tr></table></figure>
+<p>防止安装静态库：</p>
+<pre><code>sed -i &#39;/install -m.*STA/d&#39; libcap/Makefile</code></pre>
+<p>编译，测试，安装</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">make prefix&#x3D;&#x2F;usr lib&#x3D;lib</span><br><span class="line">make test</span><br><span class="line">make prefix&#x3D;&#x2F;usr lib&#x3D;lib install</span><br></pre></td></tr></table></figure>
+<p>修改权限</p>
+<pre><code>chmod -v 755 /usr/lib/lib&#123;cap,psx&#125;.so.2.53</code></pre>
+<h2 id="Shadow-4-9"><a href="#Shadow-4-9" class="headerlink" title="Shadow-4.9"></a>Shadow-4.9</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf shadow-4.9.tar.xz</span><br><span class="line">cd shadow-4.9</span><br></pre></td></tr></table></figure>
+<p>禁止该包安装<code>groups</code>程序和它的 man 页面，因为 Coreutils 会提供更好的版本。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">sed -i &#39;s&#x2F;groups$(EXEEXT) &#x2F;&#x2F;&#39; src&#x2F;Makefile.in</span><br><span class="line">find man -name Makefile.in -exec sed -i &#39;s&#x2F;groups\.1 &#x2F; &#x2F;&#39;   &#123;&#125; \;</span><br><span class="line">find man -name Makefile.in -exec sed -i &#39;s&#x2F;getspnam\.3 &#x2F; &#x2F;&#39; &#123;&#125; \;</span><br><span class="line">find man -name Makefile.in -exec sed -i &#39;s&#x2F;passwd\.5 &#x2F; &#x2F;&#39;   &#123;&#125; \;</span><br></pre></td></tr></table></figure>
+<p>不使用默认的 crypt 加密方法，使用更安全的 SHA-512 方法加密密码，该方法也允许长度超过 8 个字符的密码。还需要把用户邮箱位置<code>/var/spool/mail</code>改为<code>/var/mail</code>。另外，从默认的<code>PATH</code>中删除<code>/bin</code> 和<code>/sbin</code>，因为它们只是指向<code>/usr</code>中对应目录的符号链接：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">sed -e &#39;s:#ENCRYPT_METHOD DES:ENCRYPT_METHOD SHA512:&#39; \</span><br><span class="line">    -e &#39;s:&#x2F;var&#x2F;spool&#x2F;mail:&#x2F;var&#x2F;mail:&#39;                 \</span><br><span class="line">    -e &#39;&#x2F;PATH&#x3D;&#x2F;&#123;s@&#x2F;sbin:@@;s@&#x2F;bin:@@&#125;&#39;                \</span><br><span class="line">    -i etc&#x2F;login.defs</span><br></pre></td></tr></table></figure>
+<p>修复程序中的一处低级错误：</p>
+<pre><code>sed -e &quot;224s/rounds/min_rounds/&quot; -i libmisc/salt.c</code></pre>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">touch &#x2F;usr&#x2F;bin&#x2F;passwd</span><br><span class="line">.&#x2F;configure --sysconfdir&#x3D;&#x2F;etc \</span><br><span class="line">            --with-group-name-max-length&#x3D;32</span><br></pre></td></tr></table></figure>
+<p>编译：</p>
+<pre><code>make</code></pre>
+<p>安装：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">make exec_prefix&#x3D;&#x2F;usr install</span><br><span class="line">make -C man install-man</span><br><span class="line">mkdir -p &#x2F;etc&#x2F;default</span><br><span class="line">useradd -D --gid 999</span><br></pre></td></tr></table></figure>
+<h3 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h3><p>启用用户密码的加密</p>
+<pre><code>pwconv</code></pre>
+<p>启用组密码加密</p>
+<pre><code>grpconv</code></pre>
+<p><code>shadow</code>带了一个<code>useradd</code>的默认配置文件，其中会为新用户创建邮箱文件，若关闭，运行</p>
+<pre><code>sed -i &#39;s/yes/no/&#39; /etc/default/useradd</code></pre>
+<h3 id="设置-root-密码"><a href="#设置-root-密码" class="headerlink" title="设置 root 密码"></a>设置 root 密码</h3><pre><code>passwd root</code></pre>
+<h2 id="GCC-11-2-0"><a href="#GCC-11-2-0" class="headerlink" title="GCC-11.2.0"></a>GCC-11.2.0</h2><p>这一遍需要巨长的时间。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf gcc-11.2.0.tar.xz</span><br><span class="line">cd gcc-11.2.0</span><br></pre></td></tr></table></figure>
+<p>修复在使用 Glibc-2.34 的系统上构建该软件包时导致<code>libasan.a</code>无法使用的问题： </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sed -e &#39;&#x2F;static.*SIGSTKSZ&#x2F;d&#39; \</span><br><span class="line">    -e &#39;s&#x2F;return kAltStackSize&#x2F;return SIGSTKSZ * 4&#x2F;&#39; \</span><br><span class="line">    -i libsanitizer&#x2F;sanitizer_common&#x2F;sanitizer_posix_libcdep.cpp</span><br></pre></td></tr></table></figure>
+<p>修改 64 位库默认路径</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">case $(uname -m) in</span><br><span class="line">  x86_64)</span><br><span class="line">    sed -e &#39;&#x2F;m64&#x3D;&#x2F;s&#x2F;lib64&#x2F;lib&#x2F;&#39; \</span><br><span class="line">        -i.orig gcc&#x2F;config&#x2F;i386&#x2F;t-linux64</span><br><span class="line">  ;;</span><br><span class="line">esac</span><br></pre></td></tr></table></figure>
+<p>创建<code>build</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mkdir -v build</span><br><span class="line">cd       build</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">..&#x2F;configure --prefix&#x3D;&#x2F;usr            \</span><br><span class="line">             LD&#x3D;ld                    \</span><br><span class="line">             --enable-languages&#x3D;c,c++ \</span><br><span class="line">             --disable-multilib       \</span><br><span class="line">             --disable-bootstrap      \</span><br><span class="line">             --with-system-zlib</span><br></pre></td></tr></table></figure>
+<p>编译：</p>
+<pre><code>make</code></pre>
+<p>增加栈空间</p>
+<pre><code>ulimit -s 32768</code></pre>
+<p>以非特权用户身份测试编译结果，但出错时继续执行其他测试： </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">chown -Rv tester . </span><br><span class="line">su tester -c &quot;PATH&#x3D;$PATH make -k check&quot;</span><br></pre></td></tr></table></figure>
+<p>查看摘要</p>
+<pre><code>../contrib/test_summary</code></pre>
+<p>已知错误如下：</p>
+<ul>
+<li>已知八项与<code>analyzer</code>相关的测试会失败。     </li>
+<li>已知一项名为<code>asan_test.C</code>的测试会失败。    </li>
+<li>在<code>libstdc++</code>中，已知一项名为<code>49745.cc</code>的测试由于 Glibc 中头文件依赖关系的变化而失败。    </li>
+<li>在<code>libstdc++</code>测试中，一项<code>numpuct</code>测试和六项与 get_time 有关的测试会失败。这是由于 glibc 更新了 locale 定义，但是 libstdc++ 尚不支持这些变化。    </li>
+</ul>
+<p>同时，还有少量错误是十分正常的，毕竟这是 gcc。 （<br><strong>哪怕测试时间比编译时间还要长十倍也要坚持测试！</strong></p>
+<blockquote>
+<p>但时间真的太长了……我跑了近 5 个小时，然而编译只需要 30 分钟不到</p>
+</blockquote>
+<p>安装该软件包，并移除一个不需要的目录： </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make install</span><br><span class="line">rm -rf &#x2F;usr&#x2F;lib&#x2F;gcc&#x2F;$(gcc -dumpmachine)&#x2F;11.2.0&#x2F;include-fixed&#x2F;bits&#x2F;</span><br></pre></td></tr></table></figure>
+<p>修正之前因为测试而临时更改的文件所有者</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">chown -v -R root:root \</span><br><span class="line">    &#x2F;usr&#x2F;lib&#x2F;gcc&#x2F;*linux-gnu&#x2F;11.2.0&#x2F;include&#123;,-fixed&#125;</span><br></pre></td></tr></table></figure>
+<p>创建一个符号链接</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ln -svr &#x2F;usr&#x2F;bin&#x2F;cpp &#x2F;usr&#x2F;lib</span><br><span class="line">ln -sfv ..&#x2F;..&#x2F;libexec&#x2F;gcc&#x2F;$(gcc -dumpmachine)&#x2F;11.2.0&#x2F;liblto_plugin.so \</span><br><span class="line">        &#x2F;usr&#x2F;lib&#x2F;bfd-plugins&#x2F;</span><br></pre></td></tr></table></figure>
+<h2 id="第二次检查"><a href="#第二次检查" class="headerlink" title="第二次检查"></a>第二次检查</h2><p>现在工具链已经完成安装，需要进行一次完整的确认。<br>离开源码目录，然后</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">echo &#39;int main()&#123;&#125;&#39; &gt; dummy.c</span><br><span class="line">cc dummy.c -v -Wl,--verbose &amp;&gt; dummy.log</span><br><span class="line">readelf -l a.out | grep &#39;: &#x2F;lib&#39;</span><br></pre></td></tr></table></figure>
+<p>如果正常，输出的最后一行会是（具体名称取决于平台）</p>
+<pre><code>[Requesting program interpreter: /lib64/ld-linux-x86-64.so.2]</code></pre>
+<p>然后</p>
+<pre><code>grep -o &#39;/usr/lib.*/crt[1in].*succeeded&#39; dummy.log</code></pre>
+<p>正常输出应该是这样：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;usr&#x2F;lib&#x2F;gcc&#x2F;x86_64-pc-linux-gnu&#x2F;11.2.0&#x2F;..&#x2F;..&#x2F;..&#x2F;..&#x2F;lib&#x2F;crt1.o succeeded</span><br><span class="line">&#x2F;usr&#x2F;lib&#x2F;gcc&#x2F;x86_64-pc-linux-gnu&#x2F;11.2.0&#x2F;..&#x2F;..&#x2F;..&#x2F;..&#x2F;lib&#x2F;crti.o succeeded</span><br><span class="line">&#x2F;usr&#x2F;lib&#x2F;gcc&#x2F;x86_64-pc-linux-gnu&#x2F;11.2.0&#x2F;..&#x2F;..&#x2F;..&#x2F;..&#x2F;lib&#x2F;crtn.o succeeded</span><br></pre></td></tr></table></figure>
+<p><code>gcc</code>应该找到所有三个<code>crt*.o</code>文件，它们应该位于<code>/usr/lib</code>目录中。<br>确认编译器能正确查找头文件： </p>
+<pre><code>grep -B4 &#39;^ /usr/include&#39; dummy.log</code></pre>
+<p>这是正常输出：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">#include &lt;...&gt; search starts here:</span><br><span class="line"> &#x2F;usr&#x2F;lib&#x2F;gcc&#x2F;x86_64-pc-linux-gnu&#x2F;11.2.0&#x2F;include</span><br><span class="line"> &#x2F;usr&#x2F;local&#x2F;include</span><br><span class="line"> &#x2F;usr&#x2F;lib&#x2F;gcc&#x2F;x86_64-pc-linux-gnu&#x2F;11.2.0&#x2F;include-fixed</span><br><span class="line"> &#x2F;usr&#x2F;include</span><br></pre></td></tr></table></figure>
+<p>其中三元组的名称取决于平台。<br>确认新的链接器使用了正确的搜索路径： </p>
+<pre><code>grep &#39;SEARCH.*/usr/lib&#39; dummy.log |sed &#39;s|; |\n|g&#39;</code></pre>
+<p>路径应该要包含</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">SEARCH_DIR(&quot;&#x2F;usr&#x2F;x86_64-pc-linux-gnu&#x2F;lib64&quot;)</span><br><span class="line">SEARCH_DIR(&quot;&#x2F;usr&#x2F;local&#x2F;lib64&quot;)</span><br><span class="line">SEARCH_DIR(&quot;&#x2F;lib64&quot;)</span><br><span class="line">SEARCH_DIR(&quot;&#x2F;usr&#x2F;lib64&quot;)</span><br><span class="line">SEARCH_DIR(&quot;&#x2F;usr&#x2F;x86_64-pc-linux-gnu&#x2F;lib&quot;)</span><br><span class="line">SEARCH_DIR(&quot;&#x2F;usr&#x2F;local&#x2F;lib&quot;)</span><br><span class="line">SEARCH_DIR(&quot;&#x2F;lib&quot;)</span><br><span class="line">SEARCH_DIR(&quot;&#x2F;usr&#x2F;lib&quot;);</span><br></pre></td></tr></table></figure>
+<p>当然 32 位的路径会有不同。<br>确认使用了正确的 libc： </p>
+<pre><code>grep &quot;/lib.*/libc.so.6 &quot; dummy.log</code></pre>
+<p>应该输出</p>
+<pre><code>attempt to open /usr/lib/libc.so.6 succeeded</code></pre>
+<p>确认 GCC 使用了正确的动态链接器： </p>
+<pre><code>grep found dummy.log</code></pre>
+<p>正常输出：</p>
+<pre><code>found ld-linux-x86-64.so.2 at /usr/lib/ld-linux-x86-64.so.2</code></pre>
+<p>如果有问题，一定要修复，不能硬着头皮往下做，不然更折腾人。<br>如果一切正常，删除测试文件：</p>
+<pre><code>rm -v dummy.c a.out dummy.log</code></pre>
+<p>最后移动一个位置不正确的文件： </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mkdir -pv &#x2F;usr&#x2F;share&#x2F;gdb&#x2F;auto-load&#x2F;usr&#x2F;lib</span><br><span class="line">mv -v &#x2F;usr&#x2F;lib&#x2F;*gdb.py &#x2F;usr&#x2F;share&#x2F;gdb&#x2F;auto-load&#x2F;usr&#x2F;lib</span><br></pre></td></tr></table></figure>
+<h2 id="Pkg-config-0-29-2"><a href="#Pkg-config-0-29-2" class="headerlink" title="Pkg-config-0.29.2"></a>Pkg-config-0.29.2</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf pkg-config-0.29.2.tar.gz</span><br><span class="line">cd pkg-config-0.29.2</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr              \</span><br><span class="line">            --with-internal-glib       \</span><br><span class="line">            --disable-host-tool        \</span><br><span class="line">            --docdir&#x3D;&#x2F;usr&#x2F;share&#x2F;doc&#x2F;pkg-config-0.29.2</span><br></pre></td></tr></table></figure>
+<p>编译，检查，安装</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line">make check</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<h2 id="Ncurses-6-2"><a href="#Ncurses-6-2" class="headerlink" title="Ncurses-6.2"></a>Ncurses-6.2</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf ncurses-6.2.tar.gz</span><br><span class="line">cd ncurses-6.2</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr           \</span><br><span class="line">            --mandir&#x3D;&#x2F;usr&#x2F;share&#x2F;man \</span><br><span class="line">            --with-shared           \</span><br><span class="line">            --without-debug         \</span><br><span class="line">            --without-normal        \</span><br><span class="line">            --enable-pc-files       \</span><br><span class="line">            --enable-widec</span><br></pre></td></tr></table></figure>
+<p>编译，安装</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<p>这个包有测试，但需要安装后面的包，所以跳过。<br>创建符号链接：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">for lib in ncurses form panel menu ; do</span><br><span class="line">    rm -vf                    &#x2F;usr&#x2F;lib&#x2F;lib$&#123;lib&#125;.so</span><br><span class="line">    echo &quot;INPUT(-l$&#123;lib&#125;w)&quot; &gt; &#x2F;usr&#x2F;lib&#x2F;lib$&#123;lib&#125;.so</span><br><span class="line">    ln -sfv $&#123;lib&#125;w.pc        &#x2F;usr&#x2F;lib&#x2F;pkgconfig&#x2F;$&#123;lib&#125;.pc</span><br><span class="line">done</span><br><span class="line"></span><br><span class="line">rm -vf                     &#x2F;usr&#x2F;lib&#x2F;libcursesw.so</span><br><span class="line">echo &quot;INPUT(-lncursesw)&quot; &gt; &#x2F;usr&#x2F;lib&#x2F;libcursesw.so</span><br><span class="line">ln -sfv libncurses.so      &#x2F;usr&#x2F;lib&#x2F;libcurses.so</span><br></pre></td></tr></table></figure>
+<p>删除一个 configure 脚本未处理的静态库： </p>
+<pre><code>rm -fv /usr/lib/libncurses++w.a</code></pre>
+<p>安装文档（可选）：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mkdir -v       &#x2F;usr&#x2F;share&#x2F;doc&#x2F;ncurses-6.2</span><br><span class="line">cp -v -R doc&#x2F;* &#x2F;usr&#x2F;share&#x2F;doc&#x2F;ncurses-6.2</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>注意：此处没有创建非宽字符的库，部分二进制包会依赖于它。</p>
+</blockquote>
+<h2 id="Sed-4-8"><a href="#Sed-4-8" class="headerlink" title="Sed-4.8"></a>Sed-4.8</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf sed-4.8.tar.xz</span><br><span class="line">cd sed-4.8</span><br><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr</span><br><span class="line">make</span><br><span class="line">make html</span><br></pre></td></tr></table></figure>
+<p>测试：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">chown -Rv tester .</span><br><span class="line">su tester -c &quot;PATH&#x3D;$PATH make check&quot;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>我在检查时会报错：<code>inplace-selinux.sh: set-up failure: CONFIG_HEADER not defined</code>，看上去与 selinux 有关，不用 selinux 应该不受影响。<br>但具体原因未知。      </p>
+</blockquote>
+<p>安装：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">make install</span><br><span class="line">install -d -m755           &#x2F;usr&#x2F;share&#x2F;doc&#x2F;sed-4.8</span><br><span class="line">install -m644 doc&#x2F;sed.html &#x2F;usr&#x2F;share&#x2F;doc&#x2F;sed-4.8</span><br></pre></td></tr></table></figure>
+<h2 id="Psmisc-23-4"><a href="#Psmisc-23-4" class="headerlink" title="Psmisc-23.4"></a>Psmisc-23.4</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf psmisc-23.4.tar.xz</span><br><span class="line">cd psmisc-23.4</span><br><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr</span><br><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<h2 id="Gettext-0-21"><a href="#Gettext-0-21" class="headerlink" title="Gettext-0.21"></a>Gettext-0.21</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf gettext-0.21.tar.xz</span><br><span class="line">cd gettext-0.21</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr    \</span><br><span class="line">            --disable-static \</span><br><span class="line">            --docdir&#x3D;&#x2F;usr&#x2F;share&#x2F;doc&#x2F;gettext-0.21</span><br></pre></td></tr></table></figure>
+<p>编译，检查</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line">make check</span><br></pre></td></tr></table></figure>
+<p>测试时间会和编译时间一样长。<br>安装：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make install</span><br><span class="line">chmod -v 0755 &#x2F;usr&#x2F;lib&#x2F;preloadable_libintl.so</span><br></pre></td></tr></table></figure>
+<h2 id="Bison-3-7-6"><a href="#Bison-3-7-6" class="headerlink" title="Bison-3.7.6"></a>Bison-3.7.6</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf bison-3.7.6.tar.xz</span><br><span class="line">cd bison-3.7.6</span><br><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr --docdir&#x3D;&#x2F;usr&#x2F;share&#x2F;doc&#x2F;bison-3.7.6</span><br><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<p>可以测试，不过时间有点长。（可选）：</p>
+<pre><code>make check</code></pre>
+<h2 id="Grep-3-7"><a href="#Grep-3-7" class="headerlink" title="Grep-3.7"></a>Grep-3.7</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf grep-3.7.tar.xz</span><br><span class="line">cd grep-3.7</span><br><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr</span><br><span class="line">make</span><br><span class="line">make check</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<h2 id="Bash-5-1-8"><a href="#Bash-5-1-8" class="headerlink" title="Bash-5.1.8"></a>Bash-5.1.8</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf bash-5.1.8.tar.gz</span><br><span class="line">cd bash-5.1.8</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr                      \</span><br><span class="line">            --docdir&#x3D;&#x2F;usr&#x2F;share&#x2F;doc&#x2F;bash-5.1.8 \</span><br><span class="line">            --without-bash-malloc              \</span><br><span class="line">            --with-installed-readline</span><br></pre></td></tr></table></figure>
+<p>编译：</p>
+<pre><code>make</code></pre>
+<p>测试（可选）：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">chown -Rv tester .</span><br><span class="line"></span><br><span class="line">su -s &#x2F;usr&#x2F;bin&#x2F;expect tester &lt;&lt; EOF</span><br><span class="line">set timeout -1</span><br><span class="line">spawn make tests</span><br><span class="line">expect eof</span><br><span class="line">lassign [wait] _ _ _ value</span><br><span class="line">exit $value</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+<p>安装：</p>
+<pre><code>make install</code></pre>
+<p>换 shell：</p>
+<pre><code>exec /bin/bash --login +h</code></pre>
+<h2 id="Libtool-2-4-6"><a href="#Libtool-2-4-6" class="headerlink" title="Libtool-2.4.6"></a>Libtool-2.4.6</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf libtool-2.4.6.tar.xz</span><br><span class="line">cd libtool-2.4.6</span><br><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr</span><br><span class="line">make</span><br></pre></td></tr></table></figure>
+<p>测试，这里建议打开多线程：</p>
+<pre><code>make check TESTSUITEFLAGS=-j5</code></pre>
+<p>这里的线程数一般为逻辑 CPU 数 + 1。<br>已知会有5个因循环依赖导致的失败，但安装 automake 后可通过。<br>安装，删除静态库：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make install</span><br><span class="line">rm -fv &#x2F;usr&#x2F;lib&#x2F;libltdl.a</span><br></pre></td></tr></table></figure>
+<h2 id="GDBM-1-20"><a href="#GDBM-1-20" class="headerlink" title="GDBM-1.20"></a>GDBM-1.20</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf gdbm-1.20.tar.gz</span><br><span class="line">cd gdbm-1.20</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr    \</span><br><span class="line">            --disable-static \</span><br><span class="line">            --enable-libgdbm-compat</span><br></pre></td></tr></table></figure>
+<p>编译，测试：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line">make -k check</span><br></pre></td></tr></table></figure>
+<p>已知<code>gdbmtool</code>测试会失败。<br>安装：</p>
+<pre><code>make install</code></pre>
+<h2 id="Gperf-3-1"><a href="#Gperf-3-1" class="headerlink" title="Gperf-3.1"></a>Gperf-3.1</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf gperf-3.1.tar.gz</span><br><span class="line">cd gperf-3.1</span><br><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr --docdir&#x3D;&#x2F;usr&#x2F;share&#x2F;doc&#x2F;gperf-3.1</span><br><span class="line">make -j1 check</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<p>这里开<code>-j1</code>是因为多线程会导致错误。      </p>
+<h2 id="Expat-2-4-1"><a href="#Expat-2-4-1" class="headerlink" title="Expat-2.4.1"></a>Expat-2.4.1</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -xvf expat-2.4.1.tar.xz</span><br><span class="line">cd expat-2.4.1</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr    \</span><br><span class="line">            --disable-static \</span><br><span class="line">            --docdir&#x3D;&#x2F;usr&#x2F;share&#x2F;doc&#x2F;expat-2.4.1</span><br></pre></td></tr></table></figure>
+<p>编译，检查，安装：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line">make check</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<p>安装文档（可选）：</p>
+<pre><code>install -v -m644 doc/*.&#123;html,png,css&#125; /usr/share/doc/expat-2.4.1</code></pre>
+<p>至此，软件包安装完成过半。<br>剩下的下篇再继续。</p>
+<blockquote>
+<p>76 个包，属实是体力活……</p>
+</blockquote>
+</div><div class="article-licensing box"><div class="licensing-title"><p>LFS 搭建 4 正式构建 (1)</p><p><a href="https://williamgong.github.io/2021/11/30/lfs%E6%90%AD%E5%BB%BA4/">https://williamgong.github.io/2021/11/30/lfs%E6%90%AD%E5%BB%BA4/</a></p></div><div class="licensing-meta level is-mobile"><div class="level-left"><div class="level-item is-narrow"><div><h6>作者</h6><p>William Gong</p></div></div><div class="level-item is-narrow"><div><h6>发布于</h6><p>2021-12-01</p></div></div><div class="level-item is-narrow"><div><h6>更新于</h6><p>2021-12-02</p></div></div><div class="level-item is-narrow"><div><h6>许可协议</h6><p><a class="icon" rel="noopener" target="_blank" title="Creative Commons" href="https://creativecommons.org/"><i class="fab fa-creative-commons"></i></a><a class="icon" rel="noopener" target="_blank" title="Attribution" href="https://creativecommons.org/licenses/by/4.0/"><i class="fab fa-creative-commons-by"></i></a><a class="icon" rel="noopener" target="_blank" title="Noncommercial" href="https://creativecommons.org/licenses/by-nc/4.0/"><i class="fab fa-creative-commons-nc"></i></a></p></div></div></div></div></div><div class="article-tags is-size-7 mb-4"><span class="mr-2">#</span><a class="link-muted mr-2" rel="tag" href="/tags/Linux/">Linux</a><a class="link-muted mr-2" rel="tag" href="/tags/LFS/">LFS</a></div><!--!--></article></div><!--!--><nav class="post-navigation mt-4 level is-mobile"><div class="level-end"><a class="article-nav-next level level-item link-muted" href="/2021/11/27/lfs%E6%90%AD%E5%BB%BA3/"><span class="level-item">LFS 搭建 3 Chroot 以及构建额外工具</span><i class="level-item fas fa-chevron-right"></i></a></div></nav><!--!--></div><div class="column column-left is-4-tablet is-4-desktop is-4-widescreen  order-1 is-sticky"><div class="card widget" data-type="profile"><div class="card-content"><nav class="level"><div class="level-item has-text-centered flex-shrink-1"><div><figure class="image is-128x128 mx-auto mb-2"><img class="avatar" src="/images/avatar.png" alt="William Gong"></figure><p class="title is-size-4 is-block" style="line-height:inherit;">William Gong</p><p class="is-size-6 is-block">一条咸鱼</p><p class="is-size-6 is-flex justify-content-center"><i class="fas fa-map-marker-alt mr-1"></i><span>Guangzhou China</span></p></div></div></nav><nav class="level is-mobile"><div class="level-item has-text-centered is-marginless"><div><p class="heading">文章</p><a href="/archives"><p class="title">16</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">分类</p><a href="/categories"><p class="title">5</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">标签</p><a href="/tags"><p class="title">10</p></a></div></div></nav><div class="level"><a class="level-item button is-primary is-rounded" href="https://github.com/WilliamGong" target="_blank" rel="noopener">关注我</a></div><div class="level is-mobile"><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Github" href="https://github.com/WilliamGong"><i class="fab fa-github"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Zhihu" href="https://www.zhihu.com/people/gong-tai-lin"><i class="fab fa-zhihu"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="RSS" href="/atom.xml"><i class="fas fa-rss"></i></a></div></div></div><div class="card widget" id="toc" data-type="toc"><div class="card-content"><div class="menu"><h3 class="menu-label">目录</h3><ul class="menu-list"><li><a class="level is-mobile" href="#进入-Chroot-环境"><span class="level-left"><span class="level-item">1</span><span class="level-item">进入 Chroot 环境</span></span></a></li><li><a class="level is-mobile" href="#构建软件包"><span class="level-left"><span class="level-item">2</span><span class="level-item">构建软件包</span></span></a><ul class="menu-list"><li><a class="level is-mobile" href="#Man-pages-5-13"><span class="level-left"><span class="level-item">2.1</span><span class="level-item">Man-pages-5.13</span></span></a></li><li><a class="level is-mobile" href="#Iana-Etc-20210611"><span class="level-left"><span class="level-item">2.2</span><span class="level-item">Iana-Etc-20210611</span></span></a></li><li><a class="level is-mobile" href="#Glibc-2-34"><span class="level-left"><span class="level-item">2.3</span><span class="level-item">Glibc-2.34</span></span></a><ul class="menu-list"><li><a class="level is-mobile" href="#配置-Glibc"><span class="level-left"><span class="level-item">2.3.1</span><span class="level-item">配置 Glibc</span></span></a></li></ul></li><li><a class="level is-mobile" href="#Zlib-1-2-11"><span class="level-left"><span class="level-item">2.4</span><span class="level-item">Zlib-1.2.11</span></span></a></li><li><a class="level is-mobile" href="#Bzip2-1-0-8"><span class="level-left"><span class="level-item">2.5</span><span class="level-item">Bzip2-1.0.8</span></span></a></li><li><a class="level is-mobile" href="#Xz-5-2-5"><span class="level-left"><span class="level-item">2.6</span><span class="level-item">Xz-5.2.5</span></span></a></li><li><a class="level is-mobile" href="#Zstd-1-5-0"><span class="level-left"><span class="level-item">2.7</span><span class="level-item">Zstd-1.5.0</span></span></a></li><li><a class="level is-mobile" href="#File-5-40"><span class="level-left"><span class="level-item">2.8</span><span class="level-item">File-5.40</span></span></a></li><li><a class="level is-mobile" href="#Readline-8-1"><span class="level-left"><span class="level-item">2.9</span><span class="level-item">Readline-8.1</span></span></a></li><li><a class="level is-mobile" href="#M4-1-4-19"><span class="level-left"><span class="level-item">2.10</span><span class="level-item">M4-1.4.19</span></span></a></li><li><a class="level is-mobile" href="#Bc-5-0-0"><span class="level-left"><span class="level-item">2.11</span><span class="level-item">Bc-5.0.0</span></span></a></li><li><a class="level is-mobile" href="#Flex-2-6-4"><span class="level-left"><span class="level-item">2.12</span><span class="level-item">Flex-2.6.4</span></span></a></li><li><a class="level is-mobile" href="#Tcl-8-6-11"><span class="level-left"><span class="level-item">2.13</span><span class="level-item">Tcl-8.6.11</span></span></a></li><li><a class="level is-mobile" href="#Expect-5-45-4"><span class="level-left"><span class="level-item">2.14</span><span class="level-item">Expect-5.45.4</span></span></a></li><li><a class="level is-mobile" href="#DejaGNU-1-6-3"><span class="level-left"><span class="level-item">2.15</span><span class="level-item">DejaGNU-1.6.3</span></span></a></li><li><a class="level is-mobile" href="#Binutils-2-37"><span class="level-left"><span class="level-item">2.16</span><span class="level-item">Binutils-2.37</span></span></a></li><li><a class="level is-mobile" href="#GMP-6-2-1"><span class="level-left"><span class="level-item">2.17</span><span class="level-item">GMP-6.2.1</span></span></a></li><li><a class="level is-mobile" href="#MPFR-4-1-0"><span class="level-left"><span class="level-item">2.18</span><span class="level-item">MPFR-4.1.0</span></span></a></li><li><a class="level is-mobile" href="#MPC-1-2-1"><span class="level-left"><span class="level-item">2.19</span><span class="level-item">MPC-1.2.1</span></span></a></li><li><a class="level is-mobile" href="#Attr-2-5-1"><span class="level-left"><span class="level-item">2.20</span><span class="level-item">Attr-2.5.1</span></span></a></li><li><a class="level is-mobile" href="#Acl-2-3-1"><span class="level-left"><span class="level-item">2.21</span><span class="level-item">Acl-2.3.1</span></span></a></li><li><a class="level is-mobile" href="#Libcap-2-53"><span class="level-left"><span class="level-item">2.22</span><span class="level-item">Libcap-2.53</span></span></a></li><li><a class="level is-mobile" href="#Shadow-4-9"><span class="level-left"><span class="level-item">2.23</span><span class="level-item">Shadow-4.9</span></span></a><ul class="menu-list"><li><a class="level is-mobile" href="#配置"><span class="level-left"><span class="level-item">2.23.1</span><span class="level-item">配置</span></span></a></li><li><a class="level is-mobile" href="#设置-root-密码"><span class="level-left"><span class="level-item">2.23.2</span><span class="level-item">设置 root 密码</span></span></a></li></ul></li><li><a class="level is-mobile" href="#GCC-11-2-0"><span class="level-left"><span class="level-item">2.24</span><span class="level-item">GCC-11.2.0</span></span></a></li><li><a class="level is-mobile" href="#第二次检查"><span class="level-left"><span class="level-item">2.25</span><span class="level-item">第二次检查</span></span></a></li><li><a class="level is-mobile" href="#Pkg-config-0-29-2"><span class="level-left"><span class="level-item">2.26</span><span class="level-item">Pkg-config-0.29.2</span></span></a></li><li><a class="level is-mobile" href="#Ncurses-6-2"><span class="level-left"><span class="level-item">2.27</span><span class="level-item">Ncurses-6.2</span></span></a></li><li><a class="level is-mobile" href="#Sed-4-8"><span class="level-left"><span class="level-item">2.28</span><span class="level-item">Sed-4.8</span></span></a></li><li><a class="level is-mobile" href="#Psmisc-23-4"><span class="level-left"><span class="level-item">2.29</span><span class="level-item">Psmisc-23.4</span></span></a></li><li><a class="level is-mobile" href="#Gettext-0-21"><span class="level-left"><span class="level-item">2.30</span><span class="level-item">Gettext-0.21</span></span></a></li><li><a class="level is-mobile" href="#Bison-3-7-6"><span class="level-left"><span class="level-item">2.31</span><span class="level-item">Bison-3.7.6</span></span></a></li><li><a class="level is-mobile" href="#Grep-3-7"><span class="level-left"><span class="level-item">2.32</span><span class="level-item">Grep-3.7</span></span></a></li><li><a class="level is-mobile" href="#Bash-5-1-8"><span class="level-left"><span class="level-item">2.33</span><span class="level-item">Bash-5.1.8</span></span></a></li><li><a class="level is-mobile" href="#Libtool-2-4-6"><span class="level-left"><span class="level-item">2.34</span><span class="level-item">Libtool-2.4.6</span></span></a></li><li><a class="level is-mobile" href="#GDBM-1-20"><span class="level-left"><span class="level-item">2.35</span><span class="level-item">GDBM-1.20</span></span></a></li><li><a class="level is-mobile" href="#Gperf-3-1"><span class="level-left"><span class="level-item">2.36</span><span class="level-item">Gperf-3.1</span></span></a></li><li><a class="level is-mobile" href="#Expat-2-4-1"><span class="level-left"><span class="level-item">2.37</span><span class="level-item">Expat-2.4.1</span></span></a></li></ul></li></ul></div></div><style>.menu-list > li > a.is-active + .menu-list { display: block; }.menu-list > li > a + .menu-list { display: none; }</style><script src="/js/toc.js" defer></script></div><div class="card widget" data-type="categories"><div class="card-content"><div class="menu"><h3 class="menu-label">分类</h3><ul class="menu-list"><li><a class="level is-mobile" href="/categories/Android/"><span class="level-start"><span class="level-item">Android</span></span><span class="level-end"><span class="level-item tag">3</span></span></a></li><li><a class="level is-mobile" href="/categories/Home-Lab/"><span class="level-start"><span class="level-item">Home Lab</span></span><span class="level-end"><span class="level-item tag">4</span></span></a></li><li><a class="level is-mobile" href="/categories/LFS/"><span class="level-start"><span class="level-item">LFS</span></span><span class="level-end"><span class="level-item tag">5</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%8D%9A%E5%AE%A2%E6%90%AD%E5%BB%BA/"><span class="level-start"><span class="level-item">博客搭建</span></span><span class="level-end"><span class="level-item tag">3</span></span></a></li><li><a class="level is-mobile" href="/categories/%E6%9D%82%E8%B0%88/"><span class="level-start"><span class="level-item">杂谈</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li></ul></div></div></div><div class="card widget" data-type="archives"><div class="card-content"><div class="menu"><h3 class="menu-label">归档</h3><ul class="menu-list"><li><a class="level is-mobile" href="/archives/2021/12/"><span class="level-start"><span class="level-item">十二月 2021</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2021/11/"><span class="level-start"><span class="level-item">十一月 2021</span></span><span class="level-end"><span class="level-item tag">4</span></span></a></li><li><a class="level is-mobile" href="/archives/2021/06/"><span class="level-start"><span class="level-item">六月 2021</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2021/05/"><span class="level-start"><span class="level-item">五月 2021</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/archives/2021/04/"><span class="level-start"><span class="level-item">四月 2021</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2021/03/"><span class="level-start"><span class="level-item">三月 2021</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2020/10/"><span class="level-start"><span class="level-item">十月 2020</span></span><span class="level-end"><span class="level-item tag">6</span></span></a></li></ul></div></div></div><div class="card widget" data-type="tags"><div class="card-content"><div class="menu"><h3 class="menu-label">标签</h3><div class="field is-grouped is-grouped-multiline"><div class="control"><a class="tags has-addons" href="/tags/Android/"><span class="tag">Android</span><span class="tag">3</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Gentoo/"><span class="tag">Gentoo</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/LFS/"><span class="tag">LFS</span><span class="tag">5</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Linux/"><span class="tag">Linux</span><span class="tag">9</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Proxmox-VE/"><span class="tag">Proxmox VE</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%8D%9A%E5%AE%A2/"><span class="tag">博客</span><span class="tag">3</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%9D%82%E8%B0%88/"><span class="tag">杂谈</span><span class="tag">4</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E7%A1%AC%E4%BB%B6/"><span class="tag">硬件</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E7%BD%91%E7%BB%9C/"><span class="tag">网络</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E9%80%86%E5%90%91%E5%B7%A5%E7%A8%8B/"><span class="tag">逆向工程</span><span class="tag">3</span></a></div></div></div></div></div></div><!--!--></div></div></section><footer class="footer"><div class="container"><div class="level"><div class="level-start"><a class="footer-logo is-block mb-2" href="/">WilliamGong</a><p class="is-size-7"><span>&copy; 2021 William Gong</span>  Powered by <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a> &amp; <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank" rel="noopener">Icarus</a><br><span id="busuanzi_container_site_uv">共<span id="busuanzi_value_site_uv">0</span>个访客</span></p></div><div class="level-end"><div class="field has-addons"><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Creative Commons" href="https://creativecommons.org/"><i class="fab fa-creative-commons"></i></a></p><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/"><i class="fab fa-creative-commons-by"></i></a></p><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/WilliamGong/hexo-blog"><i class="fab fa-github"></i></a></p></div></div></div></div></footer><script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script><script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" async></script><script>moment.locale("zh-CN");</script><script>var IcarusThemeSettings = {
+            article: {
+                highlight: {
+                    clipboard: true,
+                    fold: 'unfolded'
+                }
+            }
+        };</script><script src="/js/column.js"></script><script src="/js/animation.js"></script><a id="back-to-top" title="回到顶端" href="javascript:;"><i class="fas fa-chevron-up"></i></a><script src="/js/back_to_top.js" defer></script><!--!--><!--!--><!--!--><!--!--><script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script><script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script><script>window.addEventListener("load", () => {
+            if (typeof $.fn.lightGallery === 'function') {
+                $('.article').lightGallery({ selector: '.gallery-item' });
+            }
+            if (typeof $.fn.justifiedGallery === 'function') {
+                if ($('.justified-gallery > p > .gallery-item').length) {
+                    $('.justified-gallery > p > .gallery-item').unwrap();
+                }
+                $('.justified-gallery').justifiedGallery();
+            }
+        });</script><!--!--><!--!--><script type="text/x-mathjax-config">MathJax.Hub.Config({
+            'HTML-CSS': {
+                matchFontHeight: false
+            },
+            SVG: {
+                matchFontHeight: false
+            },
+            CommonHTML: {
+                matchFontHeight: false
+            },
+            tex2jax: {
+                inlineMath: [
+                    ['$','$'],
+                    ['\\(','\\)']
+                ]
+            }
+        });</script><script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script><!--!--><!--!--><!--!--><script src="/js/main.js" defer></script><div class="searchbox"><div class="searchbox-container"><div class="searchbox-header"><div class="searchbox-input-container"><input class="searchbox-input" type="text" placeholder="想要查找什么..."></div><a class="searchbox-close" href="javascript:;">×</a></div><div class="searchbox-body"></div></div></div><script src="/js/insight.js" defer></script><script>document.addEventListener('DOMContentLoaded', function () {
+            loadInsight({"contentUrl":"/content.json"}, {"hint":"想要查找什么...","untitled":"(无标题)","posts":"文章","pages":"页面","categories":"分类","tags":"标签"});
+        });</script></body></html>
