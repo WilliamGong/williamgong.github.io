@@ -594,6 +594,40 @@
       </tags>
   </entry>
   <entry>
+    <title>LFS 搭建 6 系统配置</title>
+    <url>/2021/12/03/lfs%E6%90%AD%E5%BB%BA6/</url>
+    <content><![CDATA[<p>现在正式进入系统配置阶段。</p>
+<h1 id="网络配置"><a href="#网络配置" class="headerlink" title="网络配置"></a>网络配置</h1><p>这里使用 systemd-networkd 和 systemd-resolved<br>因为我需要远程登录，因此此处选择静态 ip：</p>
+<h2 id="静态-IP-配置"><a href="#静态-IP-配置" class="headerlink" title="静态 IP 配置"></a>静态 IP 配置</h2><p>这里还不知道目标机器网卡接口名，这个值可以用于大部分有线接口，其他参数自行替换。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cat &gt; &#x2F;etc&#x2F;systemd&#x2F;network&#x2F;10-eth-static.network &lt;&lt; &quot;EOF&quot;</span><br><span class="line">[Match]</span><br><span class="line">Name&#x3D;en*</span><br><span class="line"></span><br><span class="line">[Network]</span><br><span class="line">Address&#x3D;192.168.1.105&#x2F;24</span><br><span class="line">Gateway&#x3D;192.168.1.1</span><br><span class="line">DNS&#x3D;192.168.1.1</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+<h2 id="创建-etc-resolv-conf-文件"><a href="#创建-etc-resolv-conf-文件" class="headerlink" title="创建 /etc/resolv.conf 文件"></a>创建 /etc/resolv.conf 文件</h2><p>创建一个符号链接：</p>
+<pre><code>ln -sfv /run/systemd/resolve/resolv.conf /etc/resolv.conf</code></pre>
+<h2 id="主机名"><a href="#主机名" class="headerlink" title="主机名"></a>主机名</h2><p>创建<code>/etc/hostname</code>：</p>
+<pre><code>echo lfs &gt; /etc/hostname</code></pre>
+<p>创建<code>/etc/hosts</code>：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cat &gt; &#x2F;etc&#x2F;hosts &lt;&lt; &quot;EOF&quot;</span><br><span class="line"># Begin &#x2F;etc&#x2F;hosts</span><br><span class="line"></span><br><span class="line">127.0.0.1 localhost.localdomain localhost</span><br><span class="line">192.168.1.105 lfs.williamgong.io    lfs</span><br><span class="line">::1       localhost ip6-localhost ip6-loopback</span><br><span class="line">ff02::1   ip6-allnodes</span><br><span class="line">ff02::2   ip6-allrouters</span><br><span class="line"></span><br><span class="line"># End &#x2F;etc&#x2F;hosts</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+<p>其中写着内网 ip 的那行自行修改。</p>
+<h1 id="时钟设置"><a href="#时钟设置" class="headerlink" title="时钟设置"></a>时钟设置</h1><p>这里使用硬件时钟，在最终重启后运行：</p>
+<pre><code>timedatectl set-local-rtc 1</code></pre>
+<h1 id="Locale"><a href="#Locale" class="headerlink" title="Locale"></a>Locale</h1><p>创建<code>/etc/locale.conf</code>：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cat &gt; &#x2F;etc&#x2F;locale.conf &lt;&lt; &quot;EOF&quot;</span><br><span class="line">LANG&#x3D;en_US.utf8</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+<h1 id="创建-etc-inputrc-文件"><a href="#创建-etc-inputrc-文件" class="headerlink" title="创建 /etc/inputrc 文件"></a>创建 /etc/inputrc 文件</h1><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cat &gt; &#x2F;etc&#x2F;inputrc &lt;&lt; &quot;EOF&quot;</span><br><span class="line"># Begin &#x2F;etc&#x2F;inputrc</span><br><span class="line"># Modified by Chris Lynn &lt;roryo@roryo.dynup.net&gt;</span><br><span class="line"></span><br><span class="line"># Allow the command prompt to wrap to the next line</span><br><span class="line">set horizontal-scroll-mode Off</span><br><span class="line"></span><br><span class="line"># Enable 8bit input</span><br><span class="line">set meta-flag On</span><br><span class="line">set input-meta On</span><br><span class="line"></span><br><span class="line"># Turns off 8th bit stripping</span><br><span class="line">set convert-meta Off</span><br><span class="line"></span><br><span class="line"># Keep the 8th bit for display</span><br><span class="line">set output-meta On</span><br><span class="line"></span><br><span class="line"># none, visible or audible</span><br><span class="line">set bell-style none</span><br><span class="line"></span><br><span class="line"># All of the following map the escape sequence of the value</span><br><span class="line"># contained in the 1st argument to the readline specific functions</span><br><span class="line">&quot;\eOd&quot;: backward-word</span><br><span class="line">&quot;\eOc&quot;: forward-word</span><br><span class="line"></span><br><span class="line"># for linux console</span><br><span class="line">&quot;\e[1~&quot;: beginning-of-line</span><br><span class="line">&quot;\e[4~&quot;: end-of-line</span><br><span class="line">&quot;\e[5~&quot;: beginning-of-history</span><br><span class="line">&quot;\e[6~&quot;: end-of-history</span><br><span class="line">&quot;\e[3~&quot;: delete-char</span><br><span class="line">&quot;\e[2~&quot;: quoted-insert</span><br><span class="line"></span><br><span class="line"># for xterm</span><br><span class="line">&quot;\eOH&quot;: beginning-of-line</span><br><span class="line">&quot;\eOF&quot;: end-of-line</span><br><span class="line"></span><br><span class="line"># for Konsole</span><br><span class="line">&quot;\e[H&quot;: beginning-of-line</span><br><span class="line">&quot;\e[F&quot;: end-of-line</span><br><span class="line"></span><br><span class="line"># End &#x2F;etc&#x2F;inputrc</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+<h1 id="创建-etc-shells-文件"><a href="#创建-etc-shells-文件" class="headerlink" title="创建 /etc/shells 文件"></a>创建 /etc/shells 文件</h1><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cat &gt; &#x2F;etc&#x2F;shells &lt;&lt; &quot;EOF&quot;</span><br><span class="line"># Begin &#x2F;etc&#x2F;shells</span><br><span class="line"></span><br><span class="line">&#x2F;bin&#x2F;sh</span><br><span class="line">&#x2F;bin&#x2F;bash</span><br><span class="line"></span><br><span class="line"># End &#x2F;etc&#x2F;shells</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+<h1 id="systemd-相关"><a href="#systemd-相关" class="headerlink" title="systemd 相关"></a>systemd 相关</h1><p>限制核心转储使用的最大磁盘空间（可选）：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">mkdir -pv &#x2F;etc&#x2F;systemd&#x2F;coredump.conf.d</span><br><span class="line"></span><br><span class="line">cat &gt; &#x2F;etc&#x2F;systemd&#x2F;coredump.conf.d&#x2F;maxuse.conf &lt;&lt; EOF</span><br><span class="line">[Coredump]</span><br><span class="line">MaxUse&#x3D;5G</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+<h1 id="etc-fstab"><a href="#etc-fstab" class="headerlink" title="/etc/fstab"></a>/etc/fstab</h1><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cat &gt; &#x2F;etc&#x2F;fstab &lt;&lt; &quot;EOF&quot;</span><br><span class="line"># Begin &#x2F;etc&#x2F;fstab</span><br><span class="line"># file system mount-point type options dump fsck</span><br><span class="line"># order</span><br><span class="line">&#x2F;dev&#x2F;sda3 &#x2F; ext4 noatime,defaults 1 1</span><br><span class="line">&#x2F;dev&#x2F;sda2 swap swap pri&#x3D;1 0 0</span><br><span class="line">&#x2F;dev&#x2F;sda1 &#x2F;boot&#x2F;efi vfat defaults 0 1</span><br><span class="line"># End &#x2F;etc&#x2F;fstab</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+<p>这是我这台机器上的，参数需要自行修改。     </p>
+<p>至此，配置阶段结束，接下来就是编译内核了。</p>
+]]></content>
+      <categories>
+        <category>LFS</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>LFS</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>从零开始搭建 Home Lab 0 硬件的选择与架构方案的确定</title>
     <url>/2021/03/28/%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E6%90%AD%E5%BB%BAhomelab0/</url>
     <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>搭建 Home Lab 的想法，起源于我有一次运行虚拟机的时候。<br>虽然我现在的主力笔记本性能不差，16G 内存 + 256G SSD，但众所周知 Chrome 是著名的性能消耗大户，导致我的内存有一半被它吞了；而且由于笔记本上安装的重型软件和游戏实在太多了，尤其是游戏，占了 60G+ 的空间，导致剩余硬盘空间捉襟见肘。因此每一次使用虚拟机时，都要扣扣索索的盘算着分配的内存和虚拟磁盘的容量。更令人恼火的是，每次创建虚拟机，都要删掉一个游戏或者是占用了大量磁盘空间的软件，而且每次跑虚拟机只是测试一下而已，没过多久就要删，而删去虚拟机的时候再去下载这些程序是十分痛苦的事情。因此我便产生了专门买服务器跑虚拟机的想法。<br>而搭建 Home Lab 的另外一个原因，是因为折腾。<br>曾经我一直在一台 10 年前购入的 Lenovo 笔记本上跑 Gentoo，但由于<strong>各 种 各 样</strong>的原因，Gentoo 一直没安装成功，这称为了我心中的一根刺；而且我手头缺少一台 Linux 开发机，虽然 WSL 已经能满足大部分需求，但有些东西是 WSL 做不到的。而搭建一台 Home Lab，能做到All in One，开发机什么的将不再是问题。      </p>
@@ -1172,6 +1206,293 @@
 <blockquote>
 <p>76 个包，属实是体力活……</p>
 </blockquote>
+]]></content>
+      <categories>
+        <category>LFS</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>LFS</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>LFS 搭建 5 正式构建 (2)</title>
+    <url>/2021/12/02/lfs%E6%90%AD%E5%BB%BA5/</url>
+    <content><![CDATA[<p>现在继续构建剩下的软件包。</p>
+<h1 id="构建软件包"><a href="#构建软件包" class="headerlink" title="构建软件包"></a>构建软件包</h1><h2 id="Inetutils-2-1"><a href="#Inetutils-2-1" class="headerlink" title="Inetutils-2.1"></a>Inetutils-2.1</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf inetutils-2.1.tar.xz</span><br><span class="line">cd inetutils-2.1</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr        \</span><br><span class="line">            --bindir&#x3D;&#x2F;usr&#x2F;bin    \</span><br><span class="line">            --localstatedir&#x3D;&#x2F;var \</span><br><span class="line">            --disable-logger     \</span><br><span class="line">            --disable-whois      \</span><br><span class="line">            --disable-rcp        \</span><br><span class="line">            --disable-rexec      \</span><br><span class="line">            --disable-rlogin     \</span><br><span class="line">            --disable-rsh        \</span><br><span class="line">            --disable-servers</span><br></pre></td></tr></table></figure>
+<p>编译，检查，安装：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make</span><br><span class="line">make check</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<p>移动位置：</p>
+<pre><code>mv -v /usr/&#123;,s&#125;bin/ifconfig</code></pre>
+<h2 id="Less-590"><a href="#Less-590" class="headerlink" title="Less-590"></a>Less-590</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf less-590.tar.gz</span><br><span class="line">cd less-590</span><br><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr --sysconfdir&#x3D;&#x2F;etc</span><br><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<h2 id="Perl-5-34-0"><a href="#Perl-5-34-0" class="headerlink" title="Perl-5.34.0"></a>Perl-5.34.0</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf perl-5.34.0.tar.xz</span><br><span class="line">cp perl-5.34.0-upstream_fixes-1.patch perl-5.34.0</span><br><span class="line">cd perl-5.34.0</span><br><span class="line">patch -Np1 -i perl-5.34.0-upstream_fixes-1.patch</span><br></pre></td></tr></table></figure>
+<p>让<code>perl</code>找到已经安装好的库：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">export BUILD_ZLIB&#x3D;False</span><br><span class="line">export BUILD_BZIP2&#x3D;0</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sh Configure -des                                         \</span><br><span class="line">             -Dprefix&#x3D;&#x2F;usr                                \</span><br><span class="line">             -Dvendorprefix&#x3D;&#x2F;usr                          \</span><br><span class="line">             -Dprivlib&#x3D;&#x2F;usr&#x2F;lib&#x2F;perl5&#x2F;5.34&#x2F;core_perl      \</span><br><span class="line">             -Darchlib&#x3D;&#x2F;usr&#x2F;lib&#x2F;perl5&#x2F;5.34&#x2F;core_perl      \</span><br><span class="line">             -Dsitelib&#x3D;&#x2F;usr&#x2F;lib&#x2F;perl5&#x2F;5.34&#x2F;site_perl      \</span><br><span class="line">             -Dsitearch&#x3D;&#x2F;usr&#x2F;lib&#x2F;perl5&#x2F;5.34&#x2F;site_perl     \</span><br><span class="line">             -Dvendorlib&#x3D;&#x2F;usr&#x2F;lib&#x2F;perl5&#x2F;5.34&#x2F;vendor_perl  \</span><br><span class="line">             -Dvendorarch&#x3D;&#x2F;usr&#x2F;lib&#x2F;perl5&#x2F;5.34&#x2F;vendor_perl \</span><br><span class="line">             -Dman1dir&#x3D;&#x2F;usr&#x2F;share&#x2F;man&#x2F;man1                \</span><br><span class="line">             -Dman3dir&#x3D;&#x2F;usr&#x2F;share&#x2F;man&#x2F;man3                \</span><br><span class="line">             -Dpager&#x3D;&quot;&#x2F;usr&#x2F;bin&#x2F;less -isR&quot;                 \</span><br><span class="line">             -Duseshrplib                                 \</span><br><span class="line">             -Dusethreads</span><br></pre></td></tr></table></figure>
+<p>编译，测试，安装，清理环境变量：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make</span><br><span class="line">make test</span><br><span class="line">make install</span><br><span class="line">unset BUILD_ZLIB BUILD_BZIP2</span><br></pre></td></tr></table></figure>
+<h2 id="XML-Parser-2-46"><a href="#XML-Parser-2-46" class="headerlink" title="XML::Parser-2.46"></a>XML::Parser-2.46</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf XML-Parser-2.46.tar.gz</span><br><span class="line">cd XML-Parser-2.46</span><br><span class="line">perl Makefile.PL</span><br><span class="line">make</span><br><span class="line">make test</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<h2 id="Intltool-0-51-0"><a href="#Intltool-0-51-0" class="headerlink" title="Intltool-0.51.0"></a>Intltool-0.51.0</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf intltool-0.51.0.tar.gz</span><br><span class="line">cd intltool-0.51.0</span><br></pre></td></tr></table></figure>
+<p>修复由<code>perl-5.22</code>及更新版本导致的警告：</p>
+<pre><code>sed -i &#39;s:\\\$&#123;:\\\$\\&#123;:&#39; intltool-update.in</code></pre>
+<p>构建：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr</span><br><span class="line">make</span><br><span class="line">make check</span><br><span class="line">make install</span><br><span class="line">install -v -Dm644 doc&#x2F;I18N-HOWTO &#x2F;usr&#x2F;share&#x2F;doc&#x2F;intltool-0.51.0&#x2F;I18N-HOWTO</span><br></pre></td></tr></table></figure>
+<h2 id="Autoconf-2-71"><a href="#Autoconf-2-71" class="headerlink" title="Autoconf-2.71"></a>Autoconf-2.71</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf autoconf-2.71.tar.xz</span><br><span class="line">cd autoconf-2.71</span><br><span class="line">make</span><br><span class="line">make check TESTSUITEFLAGS&#x3D;-j5</span><br></pre></td></tr></table></figure>
+<p>这里检查也要开多线程，因为测试时间会很长。</p>
+<h2 id="Automake-1-16-4"><a href="#Automake-1-16-4" class="headerlink" title="Automake-1.16.4"></a>Automake-1.16.4</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf automake-1.16.4.tar.xz</span><br><span class="line">cd automake-1.16.4</span><br><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr --docdir&#x3D;&#x2F;usr&#x2F;share&#x2F;doc&#x2F;automake-1.16.4</span><br><span class="line">make</span><br><span class="line">make -j4 check</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<p>此处检查也要开多线程，而且时间要长的多。</p>
+<h2 id="Kmod-29"><a href="#Kmod-29" class="headerlink" title="Kmod-29"></a>Kmod-29</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf kmod-29.tar.xz</span><br><span class="line">cd kmod-29</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr          \</span><br><span class="line">            --sysconfdir&#x3D;&#x2F;etc      \</span><br><span class="line">            --with-xz              \</span><br><span class="line">            --with-zstd            \</span><br><span class="line">            --with-zlib</span><br></pre></td></tr></table></figure>
+<p>编译</p>
+<pre><code>make</code></pre>
+<p>该包的测试因为依赖<code>git</code>，因此跳过。<br>安装该软件包，并创建与 Module-Init-Tools (曾经用于处理 Linux 内核模块的软件包) 兼容的符号链接： </p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make install</span><br><span class="line"></span><br><span class="line">for target in depmod insmod modinfo modprobe rmmod; do</span><br><span class="line">  ln -sfv ..&#x2F;bin&#x2F;kmod &#x2F;usr&#x2F;sbin&#x2F;$target</span><br><span class="line">done</span><br><span class="line"></span><br><span class="line">ln -sfv kmod &#x2F;usr&#x2F;bin&#x2F;lsmod</span><br></pre></td></tr></table></figure>
+<h2 id="Elfutils-0-185-中的-Libelf"><a href="#Elfutils-0-185-中的-Libelf" class="headerlink" title="Elfutils-0.185 中的 Libelf"></a>Elfutils-0.185 中的 Libelf</h2><p>libelf 在包<code>elfutils</code>中</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf elfutils-0.185.tar.bz2</span><br><span class="line">cd elfutils-0.185</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr                \</span><br><span class="line">            --disable-debuginfod         \</span><br><span class="line">            --enable-libdebuginfod&#x3D;dummy</span><br></pre></td></tr></table></figure>
+<p>编译，检查：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make</span><br><span class="line">make check</span><br></pre></td></tr></table></figure>
+<p>我编译时此处会报错<code>FAIL: run-backtrace-native.sh</code>。该错误已于 11 月 14 日提交于 Gentoo 的 bug 处理，但版本是 0.186。不过这里只需要<code>libelf</code>，所以问题不大。    </p>
+<blockquote>
+<p>其实跳过就好了……</p>
+</blockquote>
+<p>只安装<code>libelf</code>：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make -C libelf install</span><br><span class="line">install -vm644 config&#x2F;libelf.pc &#x2F;usr&#x2F;lib&#x2F;pkgconfig</span><br><span class="line">rm &#x2F;usr&#x2F;lib&#x2F;libelf.a</span><br></pre></td></tr></table></figure>
+<h2 id="Libffi-3-4-2"><a href="#Libffi-3-4-2" class="headerlink" title="Libffi-3.4.2"></a>Libffi-3.4.2</h2><p>该包构建时会对特定处理器进行优化。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf libffi-3.4.2.tar.gz</span><br><span class="line">cd libffi-3.4.2</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr          \</span><br><span class="line">            --disable-static       \</span><br><span class="line">            --with-gcc-arch&#x3D;native \</span><br><span class="line">            --disable-exec-static-tramp</span><br></pre></td></tr></table></figure>
+<p>编译，检查，安装：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make</span><br><span class="line">make check</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<h2 id="OpenSSL-1-1-1l"><a href="#OpenSSL-1-1-1l" class="headerlink" title="OpenSSL-1.1.1l"></a>OpenSSL-1.1.1l</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf openssl-1.1.1l.tar.gz</span><br><span class="line">cd openssl-1.1.1l</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.&#x2F;config --prefix&#x3D;&#x2F;usr         \</span><br><span class="line">         --openssldir&#x3D;&#x2F;etc&#x2F;ssl \</span><br><span class="line">         --libdir&#x3D;lib          \</span><br><span class="line">         shared                \</span><br><span class="line">         zlib-dynamic</span><br></pre></td></tr></table></figure>
+<p>编译，测试：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make</span><br><span class="line">make test</span><br></pre></td></tr></table></figure>
+<p>已知测试<code>30-test_afalg.t</code>可能会失败，忽略即可。<br>安装：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sed -i &#39;&#x2F;INSTALL_LIBS&#x2F;s&#x2F;libcrypto.a libssl.a&#x2F;&#x2F;&#39; Makefile</span><br><span class="line">make MANSUFFIX&#x3D;ssl install</span><br></pre></td></tr></table></figure>
+<p>为安装目录加上版本号：</p>
+<pre><code>mv -v /usr/share/doc/openssl /usr/share/doc/openssl-1.1.1l</code></pre>
+<p>安装额外的文档（可选）：</p>
+<pre><code>cp -vfr doc/* /usr/share/doc/openssl-1.1.1l</code></pre>
+<h2 id="Python-3-9-6"><a href="#Python-3-9-6" class="headerlink" title="Python-3.9.6"></a>Python-3.9.6</h2><p>还是一样的别解压错了。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf Python-3.9.6.tar.xz</span><br><span class="line">cd Python-3.9.6</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr       \</span><br><span class="line">            --enable-shared     \</span><br><span class="line">            --with-system-expat \</span><br><span class="line">            --with-system-ffi   \</span><br><span class="line">            --with-ensurepip&#x3D;yes \</span><br><span class="line">            --enable-optimizations</span><br></pre></td></tr></table></figure>
+<p>编译，安装：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<p>此处不建议测试，但如果一定要，运行<code>make test</code>。<br>安装预先格式化的文档（可选）：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">install -v -dm755 &#x2F;usr&#x2F;share&#x2F;doc&#x2F;python-3.9.6&#x2F;html </span><br><span class="line"></span><br><span class="line">tar --strip-components&#x3D;1  \</span><br><span class="line">    --no-same-owner       \</span><br><span class="line">    --no-same-permissions \</span><br><span class="line">    -C &#x2F;usr&#x2F;share&#x2F;doc&#x2F;python-3.9.6&#x2F;html \</span><br><span class="line">    -xvf ..&#x2F;python-3.9.6-docs-html.tar.bz2</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>没错，就是另外一个 python-doc 包。</p>
+</blockquote>
+<h2 id="Ninja-1-10-2"><a href="#Ninja-1-10-2" class="headerlink" title="Ninja-1.10.2"></a>Ninja-1.10.2</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf ninja-1.10.2.tar.gz</span><br><span class="line">cd ninja-1.10.2</span><br></pre></td></tr></table></figure>
+<p>默认情况下，<code>ninjia</code>会尽量使用多进程，且进程数是 CPU 逻辑核心数 +2，以下修改可手动指定线程数：</p>
+<pre><code>export NINJAJOBS=4</code></pre>
+<p>或者使用环境变量<code>NINJAJOBS</code>：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sed -i &#39;&#x2F;int Guess&#x2F;a \</span><br><span class="line">  int   j &#x3D; 0;\</span><br><span class="line">  char* jobs &#x3D; getenv( &quot;NINJAJOBS&quot; );\</span><br><span class="line">  if ( jobs !&#x3D; NULL ) j &#x3D; atoi( jobs );\</span><br><span class="line">  if ( j &gt; 0 ) return j;\</span><br><span class="line">&#39; src&#x2F;ninja.cc</span><br></pre></td></tr></table></figure>
+<p>编译，测试：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">python3 configure.py --bootstrap</span><br><span class="line">.&#x2F;ninja ninja_test</span><br><span class="line">.&#x2F;ninja_test --gtest_filter&#x3D;-SubprocessTest.SetWithLots</span><br></pre></td></tr></table></figure>
+<p>安装：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">install -vm755 ninja &#x2F;usr&#x2F;bin&#x2F;</span><br><span class="line">install -vDm644 misc&#x2F;bash-completion &#x2F;usr&#x2F;share&#x2F;bash-completion&#x2F;completions&#x2F;ninja</span><br><span class="line">install -vDm644 misc&#x2F;zsh-completion  &#x2F;usr&#x2F;share&#x2F;zsh&#x2F;site-functions&#x2F;_ninja</span><br></pre></td></tr></table></figure>
+<h2 id="Meson-0-59-1"><a href="#Meson-0-59-1" class="headerlink" title="Meson-0.59.1"></a>Meson-0.59.1</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf meson-0.59.1.tar.gz</span><br><span class="line">cd meson-0.59.1</span><br><span class="line">python3 setup.py build</span><br><span class="line">python3 setup.py install --root&#x3D;dest</span><br><span class="line">cp -rv dest&#x2F;* &#x2F;</span><br><span class="line">install -vDm644 data&#x2F;shell-completions&#x2F;bash&#x2F;meson &#x2F;usr&#x2F;share&#x2F;bash-completion&#x2F;completions&#x2F;meson</span><br><span class="line">install -vDm644 data&#x2F;shell-completions&#x2F;zsh&#x2F;_meson &#x2F;usr&#x2F;share&#x2F;zsh&#x2F;site-functions&#x2F;_meson</span><br></pre></td></tr></table></figure>
+<p>这个包没有测试。</p>
+<h2 id="Coreutils-8-32"><a href="#Coreutils-8-32" class="headerlink" title="Coreutils-8.32"></a>Coreutils-8.32</h2><p>需要打补丁。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf coreutils-8.32.tar.xz</span><br><span class="line">cp coreutils-8.32-i18n-1.patch coreutils-8.32</span><br><span class="line">cd coreutils-8.32</span><br><span class="line">patch -Np1 -i coreutils-8.32-i18n-1.patch</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">autoreconf -fiv</span><br><span class="line">FORCE_UNSAFE_CONFIGURE&#x3D;1 .&#x2F;configure \</span><br><span class="line">            --prefix&#x3D;&#x2F;usr            \</span><br><span class="line">            --enable-no-install-program&#x3D;kill,uptime</span><br></pre></td></tr></table></figure>
+<p>编译：</p>
+<pre><code>make</code></pre>
+<p>测试（可选）：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make NON_ROOT_USERNAME&#x3D;tester check-root</span><br><span class="line">echo &quot;dummy:x:102:tester&quot; &gt;&gt; &#x2F;etc&#x2F;group</span><br><span class="line">chown -Rv tester . </span><br><span class="line">su tester -c &quot;PATH&#x3D;$PATH make RUN_EXPENSIVE_TESTS&#x3D;yes check&quot;</span><br><span class="line">sed -i &#39;&#x2F;dummy&#x2F;d&#39; &#x2F;etc&#x2F;group</span><br></pre></td></tr></table></figure>
+<p>安装：</p>
+<pre><code>make install</code></pre>
+<p>将程序移动到 FHS 要求的位置： </p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">mv -v &#x2F;usr&#x2F;bin&#x2F;chroot &#x2F;usr&#x2F;sbin</span><br><span class="line">mv -v &#x2F;usr&#x2F;share&#x2F;man&#x2F;man1&#x2F;chroot.1 &#x2F;usr&#x2F;share&#x2F;man&#x2F;man8&#x2F;chroot.8</span><br><span class="line">sed -i &#39;s&#x2F;&quot;1&quot;&#x2F;&quot;8&quot;&#x2F;&#39; &#x2F;usr&#x2F;share&#x2F;man&#x2F;man8&#x2F;chroot.8</span><br></pre></td></tr></table></figure>
+<h2 id="Check-0-15-2"><a href="#Check-0-15-2" class="headerlink" title="Check-0.15.2"></a>Check-0.15.2</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf check-0.15.2.tar.gz</span><br><span class="line">cd check-0.15.2</span><br><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr --disable-static</span><br><span class="line">make</span><br><span class="line">make check</span><br><span class="line">make docdir&#x3D;&#x2F;usr&#x2F;share&#x2F;doc&#x2F;check-0.15.2 install</span><br></pre></td></tr></table></figure>
+<h2 id="Diffutils-3-8"><a href="#Diffutils-3-8" class="headerlink" title="Diffutils-3.8"></a>Diffutils-3.8</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf diffutils-3.8.tar.xz</span><br><span class="line">cd diffutils-3.8</span><br><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr</span><br><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<h2 id="Gawk-5-1-0"><a href="#Gawk-5-1-0" class="headerlink" title="Gawk-5.1.0"></a>Gawk-5.1.0</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf gawk-5.1.0.tar.xz</span><br><span class="line">cd gawk-5.1.0</span><br></pre></td></tr></table></figure>
+<p>确保构建时不安装某些文件：</p>
+<pre><code>sed -i &#39;s/extras//&#39; Makefile.in</code></pre>
+<p>构建：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr</span><br><span class="line">make</span><br><span class="line">make check</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<p>安装文档（可选）：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">mkdir -v &#x2F;usr&#x2F;share&#x2F;doc&#x2F;gawk-5.1.0</span><br><span class="line">cp    -v doc&#x2F;&#123;awkforai.txt,*.&#123;eps,pdf,jpg&#125;&#125; &#x2F;usr&#x2F;share&#x2F;doc&#x2F;gawk-5.1.0</span><br></pre></td></tr></table></figure>
+<h2 id="Findutils-4-8-0"><a href="#Findutils-4-8-0" class="headerlink" title="Findutils-4.8.0"></a>Findutils-4.8.0</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf findutils-4.8.0.tar.xz</span><br><span class="line">cd findutils-4.8.0</span><br><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr --localstatedir&#x3D;&#x2F;var&#x2F;lib&#x2F;locate</span><br><span class="line">make</span><br><span class="line">chown -Rv tester .</span><br><span class="line">su tester -c &quot;PATH&#x3D;$PATH make check&quot;</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<h2 id="Groff-1-22-4"><a href="#Groff-1-22-4" class="headerlink" title="Groff-1.22.4"></a>Groff-1.22.4</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf groff-1.22.4.tar.gz</span><br><span class="line">cd groff-1.22.4</span><br></pre></td></tr></table></figure>
+<p>configure，并将默认纸张改为 A4：</p>
+<pre><code>PAGE=A4 ./configure --prefix=/usr</code></pre>
+<p>编译，安装,<br>此处编译强制<code>-j1</code>：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make -j1</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<h2 id="GRUB-2-06"><a href="#GRUB-2-06" class="headerlink" title="GRUB-2.06"></a>GRUB-2.06</h2><p>因为使用 UEFI，因此手册的安装流程不适用。<br>对于 BIOS，这里给出命令（不包括解压）：<br><strong>以下安装命令不支持 UEFI ！</strong></p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr          \</span><br><span class="line">            --sysconfdir&#x3D;&#x2F;etc      \</span><br><span class="line">            --disable-efiemu       \</span><br><span class="line">            --disable-werror</span><br><span class="line">make</span><br><span class="line">make install</span><br><span class="line">mv -v &#x2F;etc&#x2F;bash_completion.d&#x2F;grub &#x2F;usr&#x2F;share&#x2F;bash-completion&#x2F;completions</span><br><span class="line">make install</span><br><span class="line">mv -v &#x2F;etc&#x2F;bash_completion.d&#x2F;grub &#x2F;usr&#x2F;share&#x2F;bash-completion&#x2F;completions</span><br></pre></td></tr></table></figure>
+<h2 id="Gzip-1-10"><a href="#Gzip-1-10" class="headerlink" title="Gzip-1.10"></a>Gzip-1.10</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf gzip-1.10.tar.xz</span><br><span class="line">cd gzip-1.10</span><br><span class="line">make</span><br><span class="line">make check</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<h2 id="IPRoute2-5-13-0"><a href="#IPRoute2-5-13-0" class="headerlink" title="IPRoute2-5.13.0"></a>IPRoute2-5.13.0</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf iproute2-5.13.0.tar.xz</span><br><span class="line">cd iproute2-5.13.0</span><br></pre></td></tr></table></figure>
+<p>不安装<code>arpd</code>：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sed -i &#x2F;ARPD&#x2F;d Makefile</span><br><span class="line">rm -fv man&#x2F;man8&#x2F;arpd.8</span><br></pre></td></tr></table></figure>
+<p>禁用两个模块</p>
+<pre><code>sed -i &#39;s/.m_ipt.o//&#39; tc/Makefile</code></pre>
+<p>编译，安装：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make</span><br><span class="line">make SBINDIR&#x3D;&#x2F;usr&#x2F;sbin install</span><br></pre></td></tr></table></figure>
+<p>安装文档（可选）：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">mkdir -v              &#x2F;usr&#x2F;share&#x2F;doc&#x2F;iproute2-5.13.0</span><br><span class="line">cp -v COPYING README* &#x2F;usr&#x2F;share&#x2F;doc&#x2F;iproute2-5.13.0</span><br></pre></td></tr></table></figure>
+<h2 id="Kbd-2-4-0"><a href="#Kbd-2-4-0" class="headerlink" title="Kbd-2.4.0"></a>Kbd-2.4.0</h2><p>需要打补丁。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf kbd-2.4.0.tar.xz</span><br><span class="line">cp kbd-2.4.0-backspace-1.patch kbd-2.4.0</span><br><span class="line">cd kbd-2.4.0</span><br><span class="line">patch -Np1 -i kbd-2.4.0-backspace-1.patch</span><br></pre></td></tr></table></figure>
+<p>删除多余的<code>resizecons</code>程序及其 man 页面：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sed -i &#39;&#x2F;RESIZECONS_PROGS&#x3D;&#x2F;s&#x2F;yes&#x2F;no&#x2F;&#39; configure</span><br><span class="line">sed -i &#39;s&#x2F;resizecons.8 &#x2F;&#x2F;&#39; docs&#x2F;man&#x2F;man8&#x2F;Makefile.in</span><br></pre></td></tr></table></figure>
+<p>构建：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr --disable-vlock</span><br><span class="line">make</span><br><span class="line">make check</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<p>安装文档（可选）：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">mkdir -v            &#x2F;usr&#x2F;share&#x2F;doc&#x2F;kbd-2.4.0</span><br><span class="line">cp -R -v docs&#x2F;doc&#x2F;* &#x2F;usr&#x2F;share&#x2F;doc&#x2F;kbd-2.4.0</span><br></pre></td></tr></table></figure>
+<h2 id="Libpipeline-1-5-3"><a href="#Libpipeline-1-5-3" class="headerlink" title="Libpipeline-1.5.3"></a>Libpipeline-1.5.3</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf libpipeline-1.5.3.tar.gz</span><br><span class="line">cd libpipeline-1.5.3</span><br><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr</span><br><span class="line">make</span><br><span class="line">make check</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<h2 id="Make-4-3"><a href="#Make-4-3" class="headerlink" title="Make-4.3"></a>Make-4.3</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf make-4.3.tar.gz</span><br><span class="line">cd make-4.3</span><br><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr</span><br><span class="line">make</span><br><span class="line">make check</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<p>检查是可选的。</p>
+<h2 id="Patch-2-7-6"><a href="#Patch-2-7-6" class="headerlink" title="Patch-2.7.6"></a>Patch-2.7.6</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf patch-2.7.6.tar.xz</span><br><span class="line">cd patch-2.7.6</span><br><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr</span><br><span class="line">make</span><br><span class="line">make check</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<h2 id="Tar-1-34"><a href="#Tar-1-34" class="headerlink" title="Tar-1.34"></a>Tar-1.34</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf tar-1.34.tar.xz</span><br><span class="line">cd tar-1.34</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">FORCE_UNSAFE_CONFIGURE&#x3D;1  \</span><br><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr</span><br></pre></td></tr></table></figure>
+<p>编译，检查：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make</span><br><span class="line">make check</span><br></pre></td></tr></table></figure>
+<p>测试<code>capabilities: binary store/restore</code>的测试可能会失败或跳过。<br>安装：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make install</span><br><span class="line">make -C doc install-html docdir&#x3D;&#x2F;usr&#x2F;share&#x2F;doc&#x2F;tar-1.34</span><br></pre></td></tr></table></figure>
+<h2 id="Texinfo-6-8"><a href="#Texinfo-6-8" class="headerlink" title="Texinfo-6.8"></a>Texinfo-6.8</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf texinfo-6.8.tar.xz</span><br><span class="line">cd texinfo-6.8</span><br><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr</span><br></pre></td></tr></table></figure>
+<p>再次修复在使用 Glibc-2.34 或更新版本的系统上构建该软件包时出现的问题： </p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sed -e &#39;s&#x2F;__attribute_nonnull__&#x2F;__nonnull&#x2F;&#39; \</span><br><span class="line">    -i gnulib&#x2F;lib&#x2F;malloc&#x2F;dynarray-skeleton.c</span><br></pre></td></tr></table></figure>
+<p>编译，检查，安装：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make</span><br><span class="line">make check</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<p>安装 Tex 组件（可选）：</p>
+<pre><code>make TEXMF=/usr/share/texmf install-tex</code></pre>
+<p>重更新 Info 文档（可选）：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">pushd &#x2F;usr&#x2F;share&#x2F;info</span><br><span class="line">  rm -v dir</span><br><span class="line">  for f in *</span><br><span class="line">    do install-info $f dir 2&gt;&#x2F;dev&#x2F;null</span><br><span class="line">  done</span><br><span class="line">popd</span><br></pre></td></tr></table></figure>
+<h2 id="Vim-8-2-3337"><a href="#Vim-8-2-3337" class="headerlink" title="Vim-8.2.3337"></a>Vim-8.2.3337</h2><blockquote>
+<p>不会退出 vim 的去 BLFS 找其他编辑器</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf vim-8.2.3337.tar.gz</span><br><span class="line">cd vim-8.2.3337</span><br></pre></td></tr></table></figure>
+<p>修改<code>vimrc</code>配置文件的默认位置为<code>/etc</code>： </p>
+<pre><code>echo &#39;#define SYS_VIMRC_FILE &quot;/etc/vimrc&quot;&#39; &gt;&gt; src/feature.h</code></pre>
+<p>编译：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr</span><br><span class="line">make</span><br></pre></td></tr></table></figure>
+<p>测试：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">chown -Rv tester .</span><br><span class="line">su tester -c &quot;LANG&#x3D;en_US.UTF-8 make -j1 test&quot; &amp;&gt; vim-test.log</span><br></pre></td></tr></table></figure>
+<p>此处输出被重定向到了文件，要自行 cat。测试成功完成后，日志文件末尾会包含 “ALL DONE”。<br>安装：</p>
+<pre><code>make install</code></pre>
+<p>此处手册将<code>vi</code>改为了指向<code>vim</code>的符号链接。虽然大部分发行版会单独安装<code>vi</code>，但毕竟现在没多少人会用<code>vi</code>吧。<br>执行：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ln -sv vim &#x2F;usr&#x2F;bin&#x2F;vi</span><br><span class="line">for L in  &#x2F;usr&#x2F;share&#x2F;man&#x2F;&#123;,*&#x2F;&#125;man1&#x2F;vim.1; do</span><br><span class="line">    ln -sv vim.1 $(dirname $L)&#x2F;vi.1</span><br><span class="line">done</span><br></pre></td></tr></table></figure>
+<p>创建文档的符号链接：</p>
+<pre><code>ln -sv ../vim/vim82/doc /usr/share/doc/vim-8.2.3337</code></pre>
+<h3 id="Vim-配置"><a href="#Vim-配置" class="headerlink" title="Vim 配置"></a>Vim 配置</h3><p>加入<code>/etc/vimrc</code>：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cat &gt; &#x2F;etc&#x2F;vimrc &lt;&lt; &quot;EOF&quot;</span><br><span class="line">&quot; Begin &#x2F;etc&#x2F;vimrc</span><br><span class="line"></span><br><span class="line">&quot; Ensure defaults are set before customizing settings, not after</span><br><span class="line">source $VIMRUNTIME&#x2F;defaults.vim</span><br><span class="line">let skip_defaults_vim&#x3D;1 </span><br><span class="line"></span><br><span class="line">set nocompatible</span><br><span class="line">set backspace&#x3D;2</span><br><span class="line">set mouse&#x3D;</span><br><span class="line">syntax on</span><br><span class="line">if (&amp;term &#x3D;&#x3D; &quot;xterm&quot;) || (&amp;term &#x3D;&#x3D; &quot;putty&quot;)</span><br><span class="line">  set background&#x3D;dark</span><br><span class="line">endif</span><br><span class="line"></span><br><span class="line">&quot; End &#x2F;etc&#x2F;vimrc</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+<p>可根据自己喜好修改。虽然全局的这些就够了。     </p>
+<h2 id="MarkupSafe-2-0-1"><a href="#MarkupSafe-2-0-1" class="headerlink" title="MarkupSafe-2.0.1"></a>MarkupSafe-2.0.1</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf MarkupSafe-2.0.1.tar.gz</span><br><span class="line">cd MarkupSafe-2.0.1</span><br><span class="line">python3 setup.py build</span><br><span class="line">python3 setup.py install --optimize&#x3D;1</span><br></pre></td></tr></table></figure>
+<h2 id="Jinja2-3-0-1"><a href="#Jinja2-3-0-1" class="headerlink" title="Jinja2-3.0.1"></a>Jinja2-3.0.1</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf Jinja2-3.0.1.tar.gz</span><br><span class="line">cd Jinja2-3.0.1</span><br></pre></td></tr></table></figure>
+<h2 id="Systemd-249"><a href="#Systemd-249" class="headerlink" title="Systemd-249"></a>Systemd-249</h2><p>需要打补丁。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf systemd-249.tar.gz</span><br><span class="line">cp systemd-249-upstream_fixes-1.patch systemd-249</span><br><span class="line">cd systemd-249</span><br><span class="line">patch -Np1 -i systemd-249-upstream_fixes-1.patch</span><br></pre></td></tr></table></figure>
+<p>从默认的 udev 规则中删除不必要的组<code>render</code>和<code>sgx</code>： </p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sed -i -e &#39;s&#x2F;GROUP&#x3D;&quot;render&quot;&#x2F;GROUP&#x3D;&quot;video&quot;&#x2F;&#39; \</span><br><span class="line">        -e &#39;s&#x2F;GROUP&#x3D;&quot;sgx&quot;, &#x2F;&#x2F;&#39; rules.d&#x2F;50-udev-default.rules.in</span><br></pre></td></tr></table></figure>
+<p>准备编译，包括创建<code>build</code>：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">mkdir -p build</span><br><span class="line">cd       build</span><br><span class="line"></span><br><span class="line">LANG&#x3D;en_US.UTF-8                    \</span><br><span class="line">meson --prefix&#x3D;&#x2F;usr                 \</span><br><span class="line">      --sysconfdir&#x3D;&#x2F;etc             \</span><br><span class="line">      --localstatedir&#x3D;&#x2F;var          \</span><br><span class="line">      --buildtype&#x3D;release           \</span><br><span class="line">      -Dblkid&#x3D;true                  \</span><br><span class="line">      -Ddefault-dnssec&#x3D;no           \</span><br><span class="line">      -Dfirstboot&#x3D;false             \</span><br><span class="line">      -Dinstall-tests&#x3D;false         \</span><br><span class="line">      -Dldconfig&#x3D;false              \</span><br><span class="line">      -Dsysusers&#x3D;false              \</span><br><span class="line">      -Db_lto&#x3D;false                 \</span><br><span class="line">      -Drpmmacrosdir&#x3D;no             \</span><br><span class="line">      -Dhomed&#x3D;false                 \</span><br><span class="line">      -Duserdb&#x3D;false                \</span><br><span class="line">      -Dman&#x3D;false                   \</span><br><span class="line">      -Dmode&#x3D;release                \</span><br><span class="line">      -Ddocdir&#x3D;&#x2F;usr&#x2F;share&#x2F;doc&#x2F;systemd-249 \</span><br><span class="line">      ..</span><br></pre></td></tr></table></figure>
+<p>编译，安装：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">LANG&#x3D;en_US.UTF-8 ninja</span><br><span class="line">LANG&#x3D;en_US.UTF-8 ninja install</span><br></pre></td></tr></table></figure>
+<p>安装 man 页面： </p>
+<pre><code>tar -xf ../../systemd-man-pages-249.tar.xz --strip-components=1 -C /usr/share/man</code></pre>
+<p>删除不必要的目录： </p>
+<pre><code>rm -rf /usr/lib/pam.d</code></pre>
+<p>初始化 machine id：</p>
+<pre><code>systemd-machine-id-setup</code></pre>
+<p>设定启动目标单元的基本结构： </p>
+<pre><code>systemctl preset-all</code></pre>
+<p>禁用一个服务：</p>
+<pre><code>systemctl disable systemd-time-wait-sync.service</code></pre>
+<h2 id="D-Bus-1-12-20"><a href="#D-Bus-1-12-20" class="headerlink" title="D-Bus-1.12.20"></a>D-Bus-1.12.20</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf dbus-1.12.20.tar.gz</span><br><span class="line">cd dbus-1.12.20</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr                        \</span><br><span class="line">            --sysconfdir&#x3D;&#x2F;etc                    \</span><br><span class="line">            --localstatedir&#x3D;&#x2F;var                 \</span><br><span class="line">            --disable-static                     \</span><br><span class="line">            --disable-doxygen-docs               \</span><br><span class="line">            --disable-xml-docs                   \</span><br><span class="line">            --docdir&#x3D;&#x2F;usr&#x2F;share&#x2F;doc&#x2F;dbus-1.12.20 \</span><br><span class="line">            --with-console-auth-dir&#x3D;&#x2F;run&#x2F;console \</span><br><span class="line">            --with-system-pid-file&#x3D;&#x2F;run&#x2F;dbus&#x2F;pid \</span><br><span class="line">            --with-system-socket&#x3D;&#x2F;run&#x2F;dbus&#x2F;system_bus_socket</span><br></pre></td></tr></table></figure>
+<p>编译，安装：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<p>该包有测试，但需要一些不安装的依赖。<br>创建一个符号链接：</p>
+<pre><code>ln -sfv /etc/machine-id /var/lib/dbus</code></pre>
+<h2 id="Man-DB-2-9-4"><a href="#Man-DB-2-9-4" class="headerlink" title="Man-DB-2.9.4"></a>Man-DB-2.9.4</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf man-db-2.9.4.tar.xz</span><br><span class="line">cd man-db-2.9.4</span><br></pre></td></tr></table></figure>
+<p>cofigure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr                        \</span><br><span class="line">            --docdir&#x3D;&#x2F;usr&#x2F;share&#x2F;doc&#x2F;man-db-2.9.4 \</span><br><span class="line">            --sysconfdir&#x3D;&#x2F;etc                    \</span><br><span class="line">            --disable-setuid                     \</span><br><span class="line">            --enable-cache-owner&#x3D;bin             \</span><br><span class="line">            --with-browser&#x3D;&#x2F;usr&#x2F;bin&#x2F;lynx         \</span><br><span class="line">            --with-vgrind&#x3D;&#x2F;usr&#x2F;bin&#x2F;vgrind        \</span><br><span class="line">            --with-grap&#x3D;&#x2F;usr&#x2F;bin&#x2F;grap</span><br></pre></td></tr></table></figure>
+<p>编译，检查，安装：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make</span><br><span class="line">make check</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<h2 id="Procps-ng-3-3-17"><a href="#Procps-ng-3-3-17" class="headerlink" title="Procps-ng-3.3.17"></a>Procps-ng-3.3.17</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf procps-ng-3.3.17.tar.xz</span><br><span class="line">cd procps-3.3.17</span><br></pre></td></tr></table></figure>
+<p>这里解压出来的目录是<code>procps-3.3.17</code>，不是<code>procps-ng-3.3.17</code>。<br>configure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr                            \</span><br><span class="line">            --docdir&#x3D;&#x2F;usr&#x2F;share&#x2F;doc&#x2F;procps-ng-3.3.17 \</span><br><span class="line">            --disable-static                         \</span><br><span class="line">            --disable-kill                           \</span><br><span class="line">            --with-systemd</span><br></pre></td></tr></table></figure>
+<p>编译，测试，安装：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make</span><br><span class="line">make check</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<p>检查是可选的，且已知五项与 pkill 相关的测试可能失败。</p>
+<h2 id="Util-linux-2-37-2"><a href="#Util-linux-2-37-2" class="headerlink" title="Util-linux-2.37.2"></a>Util-linux-2.37.2</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf util-linux-2.37.2.tar.xz</span><br><span class="line">cd util-linux-2.37.2</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.&#x2F;configure ADJTIME_PATH&#x3D;&#x2F;var&#x2F;lib&#x2F;hwclock&#x2F;adjtime   \</span><br><span class="line">            --libdir&#x3D;&#x2F;usr&#x2F;lib    \</span><br><span class="line">            --docdir&#x3D;&#x2F;usr&#x2F;share&#x2F;doc&#x2F;util-linux-2.37.2 \</span><br><span class="line">            --disable-chfn-chsh  \</span><br><span class="line">            --disable-login      \</span><br><span class="line">            --disable-nologin    \</span><br><span class="line">            --disable-su         \</span><br><span class="line">            --disable-setpriv    \</span><br><span class="line">            --disable-runuser    \</span><br><span class="line">            --disable-pylibmount \</span><br><span class="line">            --disable-static     \</span><br><span class="line">            --without-python     \</span><br><span class="line">            runstatedir&#x3D;&#x2F;run</span><br></pre></td></tr></table></figure>
+<p>编译：</p>
+<pre><code>make</code></pre>
+<p>测试（可选）：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">rm tests&#x2F;ts&#x2F;lsns&#x2F;ioctl_ns</span><br><span class="line">chown -Rv tester .</span><br><span class="line">su tester -c &quot;make -k check&quot;</span><br></pre></td></tr></table></figure>
+<p>安装：</p>
+<pre><code>make install</code></pre>
+<h2 id="E2fsprogs-1-46-4"><a href="#E2fsprogs-1-46-4" class="headerlink" title="E2fsprogs-1.46.4"></a>E2fsprogs-1.46.4</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf e2fsprogs-1.46.4.tar.gz</span><br><span class="line">cd e2fsprogs-1.46.4</span><br></pre></td></tr></table></figure>
+<p>创建<code>build</code>：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">mkdir -v build</span><br><span class="line">cd       build</span><br></pre></td></tr></table></figure>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">..&#x2F;configure --prefix&#x3D;&#x2F;usr           \</span><br><span class="line">             --sysconfdir&#x3D;&#x2F;etc       \</span><br><span class="line">             --enable-elf-shlibs     \</span><br><span class="line">             --disable-libblkid      \</span><br><span class="line">             --disable-libuuid       \</span><br><span class="line">             --disable-uuidd         \</span><br><span class="line">             --disable-fsck</span><br></pre></td></tr></table></figure>
+<p>编译，测试，安装：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make</span><br><span class="line">make check</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<p>已知测试<code>u_direct_io</code>可能在一些系统上失败。<br>删除无用的静态库： </p>
+<pre><code>rm -fv /usr/lib/&#123;libcom_err,libe2p,libext2fs,libss&#125;.a</code></pre>
+<p>更新系统<code>dir</code>文件：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">gunzip -v &#x2F;usr&#x2F;share&#x2F;info&#x2F;libext2fs.info.gz</span><br><span class="line">install-info --dir-file&#x3D;&#x2F;usr&#x2F;share&#x2F;info&#x2F;dir &#x2F;usr&#x2F;share&#x2F;info&#x2F;libext2fs.info</span><br></pre></td></tr></table></figure>
+<p>安装额外文档（可选）：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">makeinfo -o      doc&#x2F;com_err.info ..&#x2F;lib&#x2F;et&#x2F;com_err.texinfo</span><br><span class="line">install -v -m644 doc&#x2F;com_err.info &#x2F;usr&#x2F;share&#x2F;info</span><br><span class="line">install-info --dir-file&#x3D;&#x2F;usr&#x2F;share&#x2F;info&#x2F;dir &#x2F;usr&#x2F;share&#x2F;info&#x2F;com_err.info</span><br></pre></td></tr></table></figure>
+<h2 id="efivar-37"><a href="#efivar-37" class="headerlink" title="efivar-37"></a>efivar-37</h2><p>这是 efibootmanager 的一个依赖。<br>下载连接：<a href="https://github.com/rhboot/efivar/releases/download/37/efivar-37.tar.bz2">https://github.com/rhboot/efivar/releases/download/37/efivar-37.tar.bz2</a><br>需要补丁，连接：<a href="https://www.linuxfromscratch.org/patches/blfs/11.0/efivar-37-gcc_9-1.patch">https://www.linuxfromscratch.org/patches/blfs/11.0/efivar-37-gcc_9-1.patch</a></p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf efivar-37.tar.bz2</span><br><span class="line">cp efivar-37-gcc_9-1.patch efivar-37</span><br><span class="line">cd efivar-37</span><br><span class="line">patch -Np1 -i efivar-37-gcc_9-1.patch</span><br><span class="line">make install LIBDIR&#x3D;&#x2F;usr&#x2F;lib</span><br></pre></td></tr></table></figure>
+<h2 id="Popt-1-18"><a href="#Popt-1-18" class="headerlink" title="Popt-1.18"></a>Popt-1.18</h2><p>这是 efibootmanager 的一个依赖。<br>下载连接：<a href="http://ftp.rpm.org/popt/releases/popt-1.x/popt-1.18.tar.gz">http://ftp.rpm.org/popt/releases/popt-1.x/popt-1.18.tar.gz</a></p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf popt-1.18.tar.gz</span><br><span class="line">cd popt-1.18</span><br><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr --disable-static</span><br><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+
+<h2 id="efibootmgr-17"><a href="#efibootmgr-17" class="headerlink" title="efibootmgr-17"></a>efibootmgr-17</h2><p>这是 GRUB 用于支持 UEFI 的一个依赖。需要单独从 BLFS 上下载。<br>下载连接：<a href="https://github.com/rhboot/efibootmgr/archive/17/efibootmgr-17.tar.gz">https://github.com/rhboot/efibootmgr/archive/17/efibootmgr-17.tar.gz</a></p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf efibootmgr-17.tar.gz</span><br><span class="line">cd efibootmgr-17</span><br></pre></td></tr></table></figure>
+<p>修复一个编译时会遇到的错误：</p>
+<pre><code>sed -e &#39;/extern int efi_set_verbose/d&#39; -i src/efibootmgr.c</code></pre>
+<p>编译，安装：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make EFIDIR&#x3D;&#x2F;boot&#x2F;efi&#x2F;EFI EFI_LOADER&#x3D;grubx64.efi</span><br><span class="line">make install EFIDIR&#x3D;&#x2F;boot&#x2F;efi&#x2F;EFI</span><br></pre></td></tr></table></figure>
+<h2 id="FreeType-2-11-0"><a href="#FreeType-2-11-0" class="headerlink" title="FreeType-2.11.0"></a>FreeType-2.11.0</h2><p>这也是一个 GRUB 的依赖……<br>而且虽然在 BLFS 里写着不是必须，但用 BLFS 的命令 configure 时会报错需要该字体。<br>下载连接：<a href="https://downloads.sourceforge.net/freetype/freetype-2.11.0.tar.xz">https://downloads.sourceforge.net/freetype/freetype-2.11.0.tar.xz</a></p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf freetype-2.11.0.tar.xz</span><br><span class="line">cd freetype-2.11.0</span><br></pre></td></tr></table></figure>
+<p>构建：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sed -ri &quot;s:.*(AUX_MODULES.*valid):\1:&quot; modules.cfg &amp;&amp;</span><br><span class="line"></span><br><span class="line">sed -r &quot;s:.*(#.*SUBPIXEL_RENDERING) .*:\1:&quot; \</span><br><span class="line">    -i include&#x2F;freetype&#x2F;config&#x2F;ftoption.h  &amp;&amp;</span><br><span class="line"></span><br><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr --enable-freetype-config --disable-static &amp;&amp;</span><br><span class="line">make</span><br></pre></td></tr></table></figure>
+<p>安装：</p>
+<pre><code>make install</code></pre>
+<h2 id="GRUB-2-06-带-UEFI-支持"><a href="#GRUB-2-06-带-UEFI-支持" class="headerlink" title="GRUB-2.06 带 UEFI 支持"></a>GRUB-2.06 带 UEFI 支持</h2><p>这里需要一个字体文件。<br>下载连接：<a href="https://unifoundry.com/pub/unifont/unifont-13.0.06/font-builds/unifont-13.0.06.pcf.gz">https://unifoundry.com/pub/unifont/unifont-13.0.06/font-builds/unifont-13.0.06.pcf.gz</a></p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf grub-2.06.tar.xz</span><br><span class="line">cd grub-2.06</span><br></pre></td></tr></table></figure>
+<p>安装字体：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">mkdir -pv &#x2F;usr&#x2F;share&#x2F;fonts&#x2F;unifont &amp;&amp;</span><br><span class="line">gunzip -c ..&#x2F;unifont-13.0.06.pcf.gz &gt; &#x2F;usr&#x2F;share&#x2F;fonts&#x2F;unifont&#x2F;unifont.pcf</span><br></pre></td></tr></table></figure>
+<p>取消编译用环境变量（虽然没设置）：</p>
+<pre><code>unset &#123;C,CPP,CXX,LD&#125;FLAGS</code></pre>
+<p>configure</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.&#x2F;configure --prefix&#x3D;&#x2F;usr        \</span><br><span class="line">            --sysconfdir&#x3D;&#x2F;etc    \</span><br><span class="line">            --disable-efiemu     \</span><br><span class="line">            --enable-grub-mkfont \</span><br><span class="line">            --with-platform&#x3D;efi  \</span><br><span class="line">            --disable-werror</span><br></pre></td></tr></table></figure>
+<p>编译：</p>
+<pre><code>make</code></pre>
+<p>安装：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make install</span><br><span class="line">mv -v &#x2F;etc&#x2F;bash_completion.d&#x2F;grub &#x2F;usr&#x2F;share&#x2F;bash-completion&#x2F;completions</span><br></pre></td></tr></table></figure>
+
+<h1 id="移除调试符号（可选）"><a href="#移除调试符号（可选）" class="headerlink" title="移除调试符号（可选）"></a>移除调试符号（可选）</h1><blockquote>
+<p>毕竟大部分人都不会调试这些软件包吧。</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">save_usrlib&#x3D;&quot;$(cd &#x2F;usr&#x2F;lib; ls ld-linux*)</span><br><span class="line">             libc.so.6</span><br><span class="line">             libthread_db.so.1</span><br><span class="line">             libquadmath.so.0.0.0 </span><br><span class="line">             libstdc++.so.6.0.29</span><br><span class="line">             libitm.so.1.0.0 </span><br><span class="line">             libatomic.so.1.2.0&quot; </span><br><span class="line"></span><br><span class="line">cd &#x2F;usr&#x2F;lib</span><br><span class="line"></span><br><span class="line">for LIB in $save_usrlib; do</span><br><span class="line">    objcopy --only-keep-debug $LIB $LIB.dbg</span><br><span class="line">    cp $LIB &#x2F;tmp&#x2F;$LIB</span><br><span class="line">    strip --strip-unneeded &#x2F;tmp&#x2F;$LIB</span><br><span class="line">    objcopy --add-gnu-debuglink&#x3D;$LIB.dbg &#x2F;tmp&#x2F;$LIB</span><br><span class="line">    install -vm755 &#x2F;tmp&#x2F;$LIB &#x2F;usr&#x2F;lib</span><br><span class="line">    rm &#x2F;tmp&#x2F;$LIB</span><br><span class="line">done</span><br><span class="line"></span><br><span class="line">online_usrbin&#x3D;&quot;bash find strip&quot;</span><br><span class="line">online_usrlib&#x3D;&quot;libbfd-2.37.so</span><br><span class="line">               libhistory.so.8.1</span><br><span class="line">               libncursesw.so.6.2</span><br><span class="line">               libm.so.6</span><br><span class="line">               libreadline.so.8.1</span><br><span class="line">               libz.so.1.2.11</span><br><span class="line">               $(cd &#x2F;usr&#x2F;lib; find libnss*.so* -type f)&quot;</span><br><span class="line"></span><br><span class="line">for BIN in $online_usrbin; do</span><br><span class="line">    cp &#x2F;usr&#x2F;bin&#x2F;$BIN &#x2F;tmp&#x2F;$BIN</span><br><span class="line">    strip --strip-unneeded &#x2F;tmp&#x2F;$BIN</span><br><span class="line">    install -vm755 &#x2F;tmp&#x2F;$BIN &#x2F;usr&#x2F;bin</span><br><span class="line">    rm &#x2F;tmp&#x2F;$BIN</span><br><span class="line">done</span><br><span class="line"></span><br><span class="line">for LIB in $online_usrlib; do</span><br><span class="line">    cp &#x2F;usr&#x2F;lib&#x2F;$LIB &#x2F;tmp&#x2F;$LIB</span><br><span class="line">    strip --strip-unneeded &#x2F;tmp&#x2F;$LIB</span><br><span class="line">    install -vm755 &#x2F;tmp&#x2F;$LIB &#x2F;usr&#x2F;lib</span><br><span class="line">    rm &#x2F;tmp&#x2F;$LIB</span><br><span class="line">done</span><br><span class="line"></span><br><span class="line">for i in $(find &#x2F;usr&#x2F;lib -type f -name \*.so* ! -name \*dbg) \</span><br><span class="line">         $(find &#x2F;usr&#x2F;lib -type f -name \*.a)                 \</span><br><span class="line">         $(find &#x2F;usr&#x2F;&#123;bin,sbin,libexec&#125; -type f); do</span><br><span class="line">    case &quot;$online_usrbin $online_usrlib $save_usrlib&quot; in</span><br><span class="line">        *$(basename $i)* ) </span><br><span class="line">            ;;</span><br><span class="line">        * ) strip --strip-unneeded $i </span><br><span class="line">            ;;</span><br><span class="line">    esac</span><br><span class="line">done</span><br><span class="line"></span><br><span class="line">unset BIN LIB save_usrlib online_usrbin online_usrlib</span><br></pre></td></tr></table></figure>
+<p>该命令会报错一堆文件格式无法识别，可以安全忽略。</p>
+<h1 id="清理"><a href="#清理" class="headerlink" title="清理"></a>清理</h1><p>现在所有包都安装完成了。是时候清理了。</p>
+<pre><code>rm -rf /tmp/*</code></pre>
+<p>然后登出，重新 chroot：</p>
+<pre><code>logout</code></pre>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">chroot &quot;$LFS&quot; &#x2F;usr&#x2F;bin&#x2F;env -i          \</span><br><span class="line">    HOME&#x3D;&#x2F;root TERM&#x3D;&quot;$TERM&quot;            \</span><br><span class="line">    PS1&#x3D;&#39;(lfs chroot) \u:\w\$ &#39;        \</span><br><span class="line">    PATH&#x3D;&#x2F;usr&#x2F;bin:&#x2F;usr&#x2F;sbin            \</span><br><span class="line">    &#x2F;bin&#x2F;bash --login</span><br></pre></td></tr></table></figure>
+<p>这次 chroot 参数有点变化，之后 chroot 都需要执行现在改过的命令。<br>接着清理：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">find &#x2F;usr&#x2F;lib &#x2F;usr&#x2F;libexec -name \*.la -delete</span><br><span class="line">find &#x2F;usr -depth -name $(uname -m)-lfs-linux-gnu\* | xargs rm -rf</span><br></pre></td></tr></table></figure>
+<p>最后，移除用户<code>tester</code>：</p>
+<pre><code>userdel -r tester</code></pre>
+<p>至此，系统构建部分正式结束。</p>
 ]]></content>
       <categories>
         <category>LFS</category>
