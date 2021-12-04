@@ -628,6 +628,69 @@
       </tags>
   </entry>
   <entry>
+    <title>LFS 搭建 7 内核与 GRUB</title>
+    <url>/2021/12/03/lfs%E6%90%AD%E5%BB%BA7/</url>
+    <content><![CDATA[<p>现在进入最后一部分，内核与 GRUB 的安装。</p>
+<h1 id="构建-Linux-内核"><a href="#构建-Linux-内核" class="headerlink" title="构建 Linux 内核"></a>构建 Linux 内核</h1><p>先解压：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -xvf linux-5.13.12.tar.xz</span><br><span class="line">cd linux-5.13.12</span><br></pre></td></tr></table></figure>
+<p>清理源码树，虽然才解压没什么必要：</p>
+<pre><code>make mrproper</code></pre>
+<h2 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h2><p>此处使用：</p>
+<pre><code>make menuconfig</code></pre>
+<blockquote>
+<p>原来我一直想使用 arch 的配置然后<code>oldconfig</code>，但试了很多次后机器启动一直失败。</p>
+</blockquote>
+<p>配置选项说明参见金步国的博客：<a href="http://www.jinbuguo.com/kernel/longterm-linux-kernel-options.html">http://www.jinbuguo.com/kernel/longterm-linux-kernel-options.html</a><br>虽然是 4.4 的，但大部分选项都没变，尤其是驱动相关。<br>尽量不要改默认的配置，驱动相关的另说。<br>下面是具体的配置选项：<br>General setup 下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">[*] Control Group support  ---&gt;</span><br><span class="line"># 手册里没有，但 systemd 建议打开</span><br><span class="line">[*] Checkpoint&#x2F;restore support</span><br><span class="line"></span><br><span class="line">[*] Configure standard kernel features (expert users)  ---&gt;</span><br><span class="line"># 子选项需要关闭以下几个：</span><br><span class="line">    [ ]   Enable 16-bit UID system calls</span><br><span class="line">    [ ]   sgetmask&#x2F;ssetmask syscalls support</span><br><span class="line">    [ ]   Sysfs syscall support</span><br><span class="line">    # 这个取决于主板有没有蜂鸣器</span><br><span class="line">    [ ]   Enable PC-Speaker support</span><br></pre></td></tr></table></figure>
+<p>Processor type and features 下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"># EFI 的支持选项：</span><br><span class="line">[*] EFI runtime service support</span><br><span class="line">[*]   EFI stub support</span><br><span class="line">[*]     EFI mixed-mode support</span><br><span class="line"></span><br><span class="line"># 虚拟机需要的选项</span><br><span class="line">[*] Linux guest support  ---&gt;</span><br><span class="line">    # 半虚拟化</span><br><span class="line">    [*]   Enable paravirtualization code</span><br><span class="line">    # KVM</span><br><span class="line">    [*]   KVM Guest support (including kvmclock)</span><br></pre></td></tr></table></figure>
+<p>Firmware Drivers 下</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">[*] Export DMI identification via sysfs to userspace</span><br><span class="line">EFI (Extensible Firmware Interface) Support  ---&gt;</span><br><span class="line">    &lt; &gt; EFI Variable Support via sysfs</span><br><span class="line">    [*] Export efi runtime maps to sysfs</span><br></pre></td></tr></table></figure>
+<p>Networking support 下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Networking options  ---&gt;</span><br><span class="line">    &lt;*&gt;   The IPv6 protocol ---&gt;</span><br></pre></td></tr></table></figure>
+<p>[*] Enable the block layer 下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Partition Types  ---&gt;</span><br><span class="line">   [*] Advanced partition selection</span><br><span class="line">   [*]   EFI GUID Partition support</span><br></pre></td></tr></table></figure>
+<p>Device Drivers 下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Generic Driver Options  ---&gt;</span><br><span class="line">    [ ] Support for uevent helper</span><br><span class="line">    [*] Maintain a devtmpfs filesystem to mount at &#x2F;dev</span><br><span class="line">    Firmware loader  ---&gt;</span><br><span class="line">        [ ]   Enable the firmware sysfs fallback mechanism</span><br><span class="line">Graphics support  ---&gt;</span><br><span class="line">    Frame buffer Devices  ---&gt;</span><br><span class="line">        --- Support for frame buffer devices</span><br><span class="line">        [*]   EFI-based Framebuffer Support</span><br><span class="line">    Console display driver support  ---&gt;</span><br><span class="line">        [*] Framebuffer Console support</span><br></pre></td></tr></table></figure>
+<p>File systems 下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">[*] Inotify support for userspace</span><br><span class="line">Pseudo filesystems  ---&gt;</span><br><span class="line">    [*]   Tmpfs POSIX Access Control Lists</span><br><span class="line">    # 这里可以打成模块也可以直接打进内核</span><br><span class="line">    &lt;M&gt; EFI Variable filesystem</span><br></pre></td></tr></table></figure>
+<p>其他的都不用管。<br>由于 LFS 不使用 initramfs，所以尽量打包进内核，尤其是文件系统相关的不要打成模块。    </p>
+<h2 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h2><p>配置完成，现在开始编译：</p>
+<pre><code>make</code></pre>
+<p>安装模块：</p>
+<pre><code>make modules_install</code></pre>
+<p>复制内核：</p>
+<pre><code>cp -iv arch/x86_64/boot/bzImage /boot/vmlinuz-5.13.12-lfs-11.0-systemd</code></pre>
+<p>此处的内核文件名称可以自行改变，但要以<code>vmlinuz-</code>开头。<br>复制<code>System.map</code>：</p>
+<pre><code>cp -iv System.map /boot/System.map-5.13.12</code></pre>
+<p>手册这里将配置<code>.config</code>保存到了<code>/boot</code>，但我是认为只要不删除源码，放源码树里就行了。<br>如果要复制配置的话，运行;</p>
+<pre><code>cp -iv .config /boot/config-5.13.12</code></pre>
+<p>安装内核文档：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">install -d &#x2F;usr&#x2F;share&#x2F;doc&#x2F;linux-5.13.12</span><br><span class="line">cp -r Documentation&#x2F;* &#x2F;usr&#x2F;share&#x2F;doc&#x2F;linux-5.13.12</span><br></pre></td></tr></table></figure>
+<p>因为不删除源码树要留以后用，而且源码树里可能有不属于<code>root</code>的文件，现在要切出目录改变所有者：</p>
+<pre><code>chown -R 0:0 .</code></pre>
+<h2 id="配置-Linux-内核模块加载顺序"><a href="#配置-Linux-内核模块加载顺序" class="headerlink" title="配置 Linux 内核模块加载顺序"></a>配置 Linux 内核模块加载顺序</h2><p>创建文件：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">install -v -m755 -d &#x2F;etc&#x2F;modprobe.d</span><br><span class="line">cat &gt; &#x2F;etc&#x2F;modprobe.d&#x2F;usb.conf &lt;&lt; &quot;EOF&quot;</span><br><span class="line"># Begin &#x2F;etc&#x2F;modprobe.d&#x2F;usb.conf</span><br><span class="line"></span><br><span class="line">install ohci_hcd &#x2F;sbin&#x2F;modprobe ehci_hcd ; &#x2F;sbin&#x2F;modprobe -i ohci_hcd ; true</span><br><span class="line">install uhci_hcd &#x2F;sbin&#x2F;modprobe ehci_hcd ; &#x2F;sbin&#x2F;modprobe -i uhci_hcd ; true</span><br><span class="line"></span><br><span class="line"># End &#x2F;etc&#x2F;modprobe.d&#x2F;usb.conf</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+<h1 id="安装-GRUB"><a href="#安装-GRUB" class="headerlink" title="安装 GRUB"></a>安装 GRUB</h1><h2 id="挂载-EFI-变量文件系统"><a href="#挂载-EFI-变量文件系统" class="headerlink" title="挂载 EFI 变量文件系统"></a>挂载 EFI 变量文件系统</h2><p>打开 UEFI 支持的 grub 需要文件系统<code>efivars</code>。<br>因为需要文件<code>/sys/firmware/efi/efivars</code>，而这个文件在非 UEFI 的机器上是不存在的，因此对于我来说需要将 LFS 硬盘迁移到目标机器挂载，现在就需要 live CD 了。<br>运行：</p>
+<pre><code>mountpoint /sys/firmware/efi/efivars || mount -v -t efivarfs efivarfs /sys/firmware/efi/efivars</code></pre>
+<p>然后安装 grub：</p>
+<pre><code>grub-install --bootloader-id=LFS --recheck</code></pre>
+<p>手动写入<code>grub.cfg</code>：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cat &gt; &#x2F;boot&#x2F;grub&#x2F;grub.cfg &lt;&lt; EOF</span><br><span class="line"># Begin &#x2F;boot&#x2F;grub&#x2F;grub.cfg</span><br><span class="line">set default&#x3D;0</span><br><span class="line">set timeout&#x3D;5</span><br><span class="line"></span><br><span class="line">insmod part_gpt</span><br><span class="line">insmod ext2</span><br><span class="line">set root&#x3D;(hd0,3)</span><br><span class="line"></span><br><span class="line">if loadfont &#x2F;boot&#x2F;grub&#x2F;fonts&#x2F;unicode.pf2; then</span><br><span class="line">  set gfxmode&#x3D;auto</span><br><span class="line">  insmod all_video</span><br><span class="line">  terminal_output gfxterm</span><br><span class="line">fi</span><br><span class="line"></span><br><span class="line">menuentry &quot;GNU&#x2F;Linux, Linux 5.13.12-lfs-11.0-systemd&quot;  &#123;</span><br><span class="line">  linux   &#x2F;boot&#x2F;vmlinuz-5.13.12-lfs-11.0-systemd root&#x3D;&#x2F;dev&#x2F;sda3 ro</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">menuentry &quot;Firmware Setup&quot; &#123;</span><br><span class="line">  fwsetup</span><br><span class="line">&#125;</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+
+
+<h1 id="收尾"><a href="#收尾" class="headerlink" title="收尾"></a>收尾</h1><p>现在手册会创建一些描述文件，模板在这，不喜欢可以跳过：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">echo 11.0-systemd &gt; &#x2F;etc&#x2F;lfs-release</span><br><span class="line"></span><br><span class="line">cat &gt; &#x2F;etc&#x2F;lsb-release &lt;&lt; &quot;EOF&quot;</span><br><span class="line">DISTRIB_ID&#x3D;&quot;Linux From Scratch&quot;</span><br><span class="line">DISTRIB_RELEASE&#x3D;&quot;11.0-systemd&quot;</span><br><span class="line">DISTRIB_CODENAME&#x3D;&quot;&lt;your name here&gt;&quot;</span><br><span class="line">DISTRIB_DESCRIPTION&#x3D;&quot;Linux From Scratch&quot;</span><br><span class="line">EOF</span><br><span class="line"></span><br><span class="line">cat &gt; &#x2F;etc&#x2F;os-release &lt;&lt; &quot;EOF&quot;</span><br><span class="line">NAME&#x3D;&quot;Linux From Scratch&quot;</span><br><span class="line">VERSION&#x3D;&quot;11.0-systemd&quot;</span><br><span class="line">ID&#x3D;lfs</span><br><span class="line">PRETTY_NAME&#x3D;&quot;Linux From Scratch 11.0-systemd&quot;</span><br><span class="line">VERSION_CODENAME&#x3D;&quot;&lt;your name here&gt;&quot;</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+<p>现在是时候重启了。<br>退出 chroot：</p>
+<pre><code>logout</code></pre>
+<p>解挂载：</p>
+<pre><code>umount -Rv $LFS</code></pre>
+<p>重启</p>
+<pre><code>reboot</code></pre>
+<p>至此，LFS 安装完成。</p>
+]]></content>
+  </entry>
+  <entry>
     <title>从零开始搭建 Home Lab 0 硬件的选择与架构方案的确定</title>
     <url>/2021/03/28/%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E6%90%AD%E5%BB%BAhomelab0/</url>
     <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>搭建 Home Lab 的想法，起源于我有一次运行虚拟机的时候。<br>虽然我现在的主力笔记本性能不差，16G 内存 + 256G SSD，但众所周知 Chrome 是著名的性能消耗大户，导致我的内存有一半被它吞了；而且由于笔记本上安装的重型软件和游戏实在太多了，尤其是游戏，占了 60G+ 的空间，导致剩余硬盘空间捉襟见肘。因此每一次使用虚拟机时，都要扣扣索索的盘算着分配的内存和虚拟磁盘的容量。更令人恼火的是，每次创建虚拟机，都要删掉一个游戏或者是占用了大量磁盘空间的软件，而且每次跑虚拟机只是测试一下而已，没过多久就要删，而删去虚拟机的时候再去下载这些程序是十分痛苦的事情。因此我便产生了专门买服务器跑虚拟机的想法。<br>而搭建 Home Lab 的另外一个原因，是因为折腾。<br>曾经我一直在一台 10 年前购入的 Lenovo 笔记本上跑 Gentoo，但由于<strong>各 种 各 样</strong>的原因，Gentoo 一直没安装成功，这称为了我心中的一根刺；而且我手头缺少一台 Linux 开发机，虽然 WSL 已经能满足大部分需求，但有些东西是 WSL 做不到的。而搭建一台 Home Lab，能做到All in One，开发机什么的将不再是问题。      </p>
